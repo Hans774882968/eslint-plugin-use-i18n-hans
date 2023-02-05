@@ -1,13 +1,15 @@
 ## 引言
-看到[参考链接1](https://www.darraghoriordan.com/2021/11/06/how-to-write-an-eslint-plugin-typescript/)以后，觉得用TS写一个eslint插件应该很简单~~🐔⌨️🍚~~，尝试下来确实如此。
+看到[参考链接1](https://www.darraghoriordan.com/2021/11/06/how-to-write-an-eslint-plugin-typescript/)以后，觉得用TS写一个eslint插件应该很~~简单🐔⌨️🍚~~，尝试下来确实如此。
 
 ## 前置知识
 本文假设
 - 你对AST遍历有所了解。
 - 你写过单测用例。
 
+**作者：[hans774882968](https://blog.csdn.net/hans774882968)以及[hans774882968](https://juejin.cn/user/1464964842528888)以及[hans774882968](https://www.52pojie.cn/home.php?mod=space&uid=1906177)**
+
 ## 第一个eslint规则：no-console
-为了简单，我们只使用tsc。首先`package.json`需要设置入口`"main": "dist/index.js",`，`tsconfig.json`需要设置`"outDir": "dist"`、`"include": ["src"]`。接下来设计一下单元测试和构建命令：
+为了简单，我们只使用tsc进行构建。首先`package.json`需要设置入口`"main": "dist/index.js",`，`tsconfig.json`需要设置`"outDir": "dist"`、`"include": ["src"]`。接下来设计一下单元测试和构建命令：
 
 ```json
 "scripts": {
@@ -237,7 +239,7 @@ if (Array.isArray(excludedFiles)) {
 }
 ```
 
-`context.getFilename()`文档：https://eslint.org/docs/latest/extend/custom-rules#the-context-object。其特性：在`yarn test`时会返回`file.ts`，在作为npm包引入另一个项目后，可以正常获取文件的绝对路径。
+`context.getFilename()`文档：https://eslint.org/docs/latest/extend/custom-rules#the-context-object 。其特性：在`yarn test`时会返回`file.ts`，在作为npm包引入另一个项目后，可以正常获取文件的绝对路径。
 
 为了支持glob语法，我们引入了`multimatch`。但需要**指定版本为5.0.0**，因为`multimatch6.0.0`只支持es module，而我反复尝试都无法找到一个可以生效的`jest`配置（`transformIgnorePatterns`等配置项的资料都极少，[这篇blog](https://www.cnblogs.com/xueyoucd/p/10495922.html)看上去操作性很强，但尝试后依旧无效……）。
 
@@ -257,8 +259,11 @@ if (Array.isArray(excludedFiles)) {
 
 `.eslintrc.js`取消或添加注释并保存，vscode应该能立刻看到报错的产生和消失。
 
+TODO：是否能够mock `context.getFilename()`，让本地可以写测试用例？
+
 ## 发布npm包
 TODO
 
 ## 参考资料
 1. 值得参考的教程：https://www.darraghoriordan.com/2021/11/06/how-to-write-an-eslint-plugin-typescript/
+2. `eslint`有编写自定义规则的官方文档：https://eslint.org/docs/latest/extend/custom-rules
