@@ -5,7 +5,8 @@ module.exports = {
   },
   'extends': [
     'eslint:recommended',
-    'plugin:@typescript-eslint/recommended'
+    'plugin:@typescript-eslint/recommended',
+    'plugin:@hans774882968/use-i18n/all'
   ],
   'overrides': [
   ],
@@ -15,9 +16,20 @@ module.exports = {
     'sourceType': 'module'
   },
   'plugins': [
-    '@typescript-eslint'
+    '@typescript-eslint',
+    '@hans774882968/use-i18n'
   ],
   rules: {
+    '@hans774882968/use-i18n/no-console': ['error', {
+      excludedFiles: [
+        'test/*.ts',
+        'fixtures/no-warn-folder/**/*.js',
+        'fixtures/i18n-tests/*.js'
+      ]
+    }],
+    '@hans774882968/use-i18n/i18n-usage': ['error', {
+      i18nFunctionNames: ['$i18n', '$t']
+    }],
     // http://eslint.cn/docs/rules/
     'no-console': 'off',
     'no-debugger': process.env.NODE_ENV === 'production' ? 'warn' : 'off',

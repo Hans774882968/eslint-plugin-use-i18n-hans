@@ -1,6 +1,6 @@
 {
   "name": "@hans774882968/eslint-plugin-use-i18n",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "description": "The function of this eslint plugin is to remind you to use i18n() method correctly",
   "main": "dist/index.js",
   "files": [
@@ -21,7 +21,7 @@
     "build": "yarn clean && mkdir ./dist && tsc",
     "test": "jest",
     "test:help": "jest --help",
-    "lint": "eslint \"src/**/*.{js,jsx,ts,tsx}\" \"test/**/*.{js,jsx,ts,tsx}\" \"*.{js,jsx,ts,tsx}\" --fix"
+    "lint": "eslint \"src/**/*.{js,jsx,ts,tsx}\" \"test/**/*.{js,jsx,ts,tsx}\" \"*.{js,jsx,ts,tsx}\" \"fixtures/**/*.{js,jsx,ts,tsx}\" --fix"
   },
   "keywords": [
     "eslint",
@@ -35,6 +35,7 @@
     "@babel/core": "^7.20.12",
     "@babel/preset-env": "^7.20.2",
     "@babel/preset-typescript": "^7.18.6",
+    "@hans774882968/eslint-plugin-use-i18n": "^1.0.4",
     "@types/jest": "^29.1.2",
     "@types/node": "^18.7.13",
     "babel-jest": "^29.4.1",
