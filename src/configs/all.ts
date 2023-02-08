@@ -2,7 +2,7 @@ export default {
   parser: '@typescript-eslint/parser',
   parserOptions: { sourceType: 'module' },
   rules: {
-    '@hans/use-i18n-hans/no-console': 'error',
-    '@hans/use-i18n-hans/i18n-usage': 'error'
+    '@hans774882968/use-i18n/no-console': 'error',
+    '@hans774882968/use-i18n/i18n-usage': 'error'
   }
 };

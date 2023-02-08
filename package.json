@@ -13,6 +13,9 @@
     "type": "git",
     "url": "https://github.com/Hans774882968/eslint-plugin-use-i18n-hans"
   },
+  "publishConfig": {
+    "registry": "https://registry.npmjs.org/"
+  },
   "scripts": {
     "clean": "rm -Rf ./dist/",
     "build": "yarn clean && mkdir ./dist && tsc",
