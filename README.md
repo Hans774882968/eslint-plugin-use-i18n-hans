@@ -346,6 +346,9 @@ module.exports = {
 ### 后续发布
 TODO
 
+## 修复Parsing error：让规则忽略vue文件
+这个版本有一个小问题：对于有vue文件的项目，报错`error  Parsing error: '>' expected`。这个问题将在下个版本修复。
+
 ## 参考资料
 1. 值得参考的教程：https://www.darraghoriordan.com/2021/11/06/how-to-write-an-eslint-plugin-typescript/
 2. `eslint`有编写自定义规则的官方文档：https://eslint.org/docs/latest/extend/custom-rules

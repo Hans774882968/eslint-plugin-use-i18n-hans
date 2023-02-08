@@ -17,12 +17,12 @@ const rule = createRule({
   name: 'no-console',
   meta: {
     docs: {
-      description: 'Remember to delete console.method()',
+      description: 'Remember to delete console.{{methodName}}()',
       recommended: 'error',
       requiresTypeChecking: false
     },
     messages: {
-      rememberToDelete: 'Remember to delete console.method()'
+      rememberToDelete: 'Remember to delete console.{{methodName}}()'
     },
     type: 'problem',
     schema: [
@@ -51,12 +51,19 @@ const rule = createRule({
     }
     return {
       MemberExpression (node) {
-        if (isIdentifier(node.object) && node.object.name === 'console' &&
-            isIdentifier(node.property) && Object.prototype.hasOwnProperty.call(console, node.property.name) &&
-            !whiteList.includes(node.property.name)
-        ) {
-          context.report({ node, messageId: 'rememberToDelete' });
+        if (!isIdentifier(node.object) || node.object.name !== 'console' ||
+            !isIdentifier(node.property)) {
+          return;
         }
+        const methodName = node.property.name;
+        if (!Object.prototype.hasOwnProperty.call(console, methodName) || whiteList.includes(methodName)) {
+          return;
+        }
+        context.report({
+          node,
+          messageId: 'rememberToDelete',
+          data: { methodName }
+        });
       }
     };
   }
