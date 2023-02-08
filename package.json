@@ -1,5 +1,5 @@
 {
-  "name": "@hans/eslint-plugin-use-i18n-hans",
+  "name": "@hans774882968/eslint-plugin-use-i18n",
   "version": "1.0.0",
   "description": "The function of this eslint plugin is to remind you to use i18n() method correctly",
   "main": "dist/index.js",
@@ -26,7 +26,7 @@
     "eslint-plugin",
     "i18n"
   ],
-  "author": "hans",
+  "author": "hans774882968",
   "license": "ISC",
   "devDependencies": {
     "@babel/core": "^7.20.12",
