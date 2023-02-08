@@ -1,8 +1,18 @@
 {
   "name": "@hans/eslint-plugin-use-i18n-hans",
   "version": "1.0.0",
-  "description": "The function of this eslint plugin is to remind you to wrap text with i18n()",
+  "description": "The function of this eslint plugin is to remind you to use i18n() method correctly",
   "main": "dist/index.js",
+  "files": [
+    "dist",
+    "package.json",
+    "README.md"
+  ],
+  "homepage": "https://github.com/Hans774882968/eslint-plugin-use-i18n-hans",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Hans774882968/eslint-plugin-use-i18n-hans"
+  },
   "scripts": {
     "clean": "rm -Rf ./dist/",
     "build": "yarn clean && mkdir ./dist && tsc",

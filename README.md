@@ -8,6 +8,12 @@
 
 **作者：[hans774882968](https://blog.csdn.net/hans774882968)以及[hans774882968](https://juejin.cn/user/1464964842528888)以及[hans774882968](https://www.52pojie.cn/home.php?mod=space&uid=1906177)**
 
+本文52pojie：https://www.52pojie.cn/thread-1742210-1-1.html
+
+本文CSDN：https://blog.csdn.net/hans774882968/article/details/128891004
+
+本文juejin：https://juejin.cn/post/7196517835379900477
+
 ## 第一个eslint规则：no-console
 为了简单，我们只使用tsc进行构建。首先`package.json`需要设置入口`"main": "dist/index.js",`，`tsconfig.json`需要设置`"outDir": "dist"`、`"include": ["src"]`。接下来设计一下单元测试和构建命令：
 
@@ -139,7 +145,7 @@ const rule = createRule({
 export default rule;
 ```
 
-代码传送门：`src/rules/noConsole.ts`
+代码传送门：[src/rules/noConsole.ts](https://github.com/Hans774882968/eslint-plugin-use-i18n-hans/blob/main/src/rules/noConsole.ts)
 
 ## 本地测试
 单元测试：
@@ -241,7 +247,7 @@ if (Array.isArray(excludedFiles)) {
 
 `context.getFilename()`文档：https://eslint.org/docs/latest/extend/custom-rules#the-context-object 。其特性：在`yarn test`时会返回`file.ts`，在作为npm包引入另一个项目后，可以正常获取文件的绝对路径。
 
-为了支持glob语法，我们引入了`multimatch`。但需要**指定版本为5.0.0**，因为`multimatch6.0.0`只支持es module，而我反复尝试都无法找到一个可以生效的`jest`配置（`transformIgnorePatterns`等配置项的资料都极少，[这篇blog](https://www.cnblogs.com/xueyoucd/p/10495922.html)看上去操作性很强，但尝试后依旧无效……）。
+为了支持glob语法，我们引入了`multimatch`。但需要**指定版本为5.0.0**，因为`multimatch6.0.0`只支持es module，而我反复尝试都无法找到一个可以生效的`jest`配置。`transformIgnorePatterns`等配置项的资料都极少，[这篇blog](https://www.cnblogs.com/xueyoucd/p/10495922.html)看上去操作性很强，但尝试后依旧无效……TODO：让佬们教教我。
 
 构建完成后，我们可以在另一个项目尝试配置`@hans/use-i18n-hans/no-console`规则：
 
@@ -260,6 +266,40 @@ if (Array.isArray(excludedFiles)) {
 `.eslintrc.js`取消或添加注释并保存，vscode应该能立刻看到报错的产生和消失。
 
 TODO：是否能够mock `context.getFilename()`，让本地可以写测试用例？
+
+## 检测不合法的i18n方法使用方式
+在Vue里，我们通过调用`i18n`方法来实现国际化。于是我们可能会希望实现一个eslint规则，指出用户调用`i18n`方法的方式不合法。输入参数：`i18nFunctionNames: string[]`，指定是`i18n`的方法名，也就是这条eslint规则的检测范围，比如`['$gt', '$t', '$i18n']`。不合法情形：
+- 不传入参数。如：`$gt()`。
+- 第一个参数不是字符串字面量（String Literal）。如：`$gt(12), $gt(1 + 2), $gt(null), $gt(undefined)`。
+
+从本质上来说，实现它并不比上文的`no-console`规则难。所以我仅指出实现上的注意点：
+1. 规则的`meta.messages`的一条消息可以是string template，`context.report`可以向string template传入参数。比如：`meta.messages = { a: '{{var}}' }`，`context.report({ node, messageId: 'a', data: { var } })`，我们通过`data`属性向消息的string template传入参数。这个功能有什么用呢？我们在给出eslint提示的时候，希望给出我们检测出的用户正在使用的`i18n`方法名，就可以用这个功能实现。
+2. 面对判断节点类型的需求，`@typescript-eslint/utils`的`TSESTree`确实不如`@babel/types`好用。我们可以用`ASTUtils.isIdentifier`判断`node is TSESTree.Identifier`，但对于`MemberExpression`等类型，则需要`node.type === AST_NODE_TYPES.MemberExpression`来判定。更麻烦的一个例子是：为了检测字符串字面量，我不得不使用`node.type !== AST_NODE_TYPES.Literal || typeof node.value !== 'string'`。TODO：是否能找到更好的判定方式？
+3. eslint单测`ESLintUtils.RuleTester`的测试用例，可以指定`errors: TestCaseError<messageId[]>[]`这个数组，`errors`的`TestCaseError`应按文本从上往下列出。
+
+[代码传送门](https://github.com/Hans774882968/eslint-plugin-use-i18n-hans/blob/main/src/rules/i18nUsage.ts)
+
+构建完成后，另一个项目的eslint配置：
+
+```js
+module.exports = {
+  plugins: [
+    '@hans/use-i18n-hans',
+  ],
+  extends: [
+    'plugin:@hans/use-i18n-hans/all',
+  ],
+  rules: {
+    '@hans/use-i18n-hans/i18n-usage': ['error', {
+      i18nFunctionNames: ['$i18n', '$t'],
+    }],
+  }
+}
+```
+
+效果：
+
+![2-i18n方法用法检测效果图](./README_assets/2-i18n%E6%96%B9%E6%B3%95%E7%94%A8%E6%B3%95%E6%A3%80%E6%B5%8B%E6%95%88%E6%9E%9C%E5%9B%BE.png)
 
 ## 发布npm包
 TODO
