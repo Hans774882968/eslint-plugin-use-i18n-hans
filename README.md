@@ -116,7 +116,17 @@ export default {
 };
 ```
 
-我们用`createRule`函数来创建一条规则。它需要传一个对象，我列举一下这个对象常用的几个属性：
+我们用`createRule`函数来创建一条规则，`createRule`函数定义如下：
+
+```ts
+import { ESLintUtils } from '@typescript-eslint/utils';
+
+export default ESLintUtils.RuleCreator(
+  () => 'rule documentation url'
+);
+```
+
+`createRule`需要传一个对象，我列举一下这个对象常用的几个属性：
 - `meta.schema`：配置`eslint`规则的时候可以指定的`options`参数。通常传入的值为`{}`（不接收参数）和`object[]`。
 - `meta.messages`：一个对象，`{ messageId: text }`。
 - `create`方法：`eslint`需要建立AST并遍历，所以要拿到这个方法的返回值作为遍历AST的配置。输入参数是`context`对象，常用的方法有：`context.options[0]`获取传入的参数；`context.getFilename()`获取当前`yarn lint`正在解析的文件名；`context.report`函数向用户报错，通常这么用：`context.report({ node, messageId: 'xxMessageId' })`，`messageId`必须符合`meta.messages`给出的定义。`create`方法返回的对象有点类似于`@babel/traverse`的`traverse`方法的第二个参数，具体写法看参考链接1的项目就行。
@@ -183,7 +193,9 @@ yarn test
 yarn build
 ```
 
-在另一个项目（这里用了相对路径，用绝对路径也行）：
+接下来有两种方式模拟已发布的`npm`包。
+
+（1）在另一个项目（这里用了相对路径，用绝对路径也行）：
 
 ```bash
 yarn add -D file:../eslint-plugin-use-i18n-hans
@@ -200,6 +212,16 @@ yarn add -D file:../eslint-plugin-use-i18n-hans
   }
 }
 ```
+
+（2）先在本项目根目录运行`yarn link`，再在另一个项目：
+
+```bash
+yarn link @hans774882968/eslint-plugin-use-i18n
+```
+
+这个做法不会改变`package.json`。
+
+但这两种做法都有一个问题：不能检测出应列举在`dependencies`的包被错误地列举在`devDependencies`的情况。TODO：佬们教教我如何检测出这种情况。
 
 接下来配置`.eslintrc.js`：
 
@@ -344,10 +366,49 @@ module.exports = {
 ```
 
 ### 后续发布
-TODO
+`package.json`的`version`没变就不能再次发布。可以手动改版本号。也可以用`npm version patch`来升版本，注意：这条命令会自动产生一次`commit`，可以直接push。
 
-## 修复Parsing error：让规则忽略vue文件
-这个版本有一个小问题：对于有vue文件的项目，报错`error  Parsing error: '>' expected`。这个问题将在下个版本修复。
+`npm version`可用参数如下：
+
+```bash
+// patch：补丁号，修复bug，小变动，如 1.0.0 -> 1.0.1
+npm version patch
+
+// minor：次版本号，增加新功能，如 1.0.0 -> 1.1.0
+npm version minor
+
+// major：主版本号，不兼容的修改，如 1.0.0 -> 2.0.0
+npm version major
+```
+
+标记某个版本为`deprecated`：
+
+```bash
+npm deprecate <package_name>@<version> "deprecate reason"
+```
+
+一般不建议使用`unpublish`，而是用`deprecated`代替。
+
+## 修复vue文件的Parsing error
+这个版本有一个小问题：对于有vue文件的项目，报错`error  Parsing error: '>' expected`。
+
+我一开始想用`context.getFilename()`获取文件后缀名，避免解析vue文件。但看到[参考链接7](https://eslint.vuejs.org/user-guide/#how-to-use-a-custom-parser)后尝试了一下，发现也可行。
+
+以`src/configs/all.ts`为例，其他config同理。首先`yarn add vue-eslint-parser`，然后把`parser: '@typescript-eslint/parser'`修改为：
+
+```ts
+export default {
+  parser: 'vue-eslint-parser',
+  parserOptions: {
+    parser: '@typescript-eslint/parser',
+    sourceType: 'module'
+  },
+  rules: {
+    '@hans774882968/use-i18n/no-console': 'error',
+    '@hans774882968/use-i18n/i18n-usage': 'error'
+  }
+};
+```
 
 ## 参考资料
 1. 值得参考的教程：https://www.darraghoriordan.com/2021/11/06/how-to-write-an-eslint-plugin-typescript/
@@ -355,3 +416,5 @@ TODO
 3. https://juejin.cn/post/7170635418549878814
 4. npm publish包报404，is not in the npm registry错误：https://juejin.cn/post/7143988072403697701
 5. https://stackoverflow.com/questions/39115101/getting-404-when-attempting-to-publish-new-package-to-npm
+6. https://reactjs.org/docs/how-to-contribute.html
+7. 同时使用`@typescript-eslint/parser`和`vue-eslint-parser`：https://eslint.vuejs.org/user-guide/#how-to-use-a-custom-parser
