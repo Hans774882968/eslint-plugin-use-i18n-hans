@@ -15,7 +15,13 @@
 本文juejin：https://juejin.cn/post/7196517835379900477
 
 ## Usage
-`.eslintrc.js`
+```bash
+npm install -D @hans774882968/eslint-plugin-use-i18n
+# or
+yarn add -D @hans774882968/eslint-plugin-use-i18n
+```
+
+then in `.eslintrc.js`
 
 ```js
 module.exports = {
@@ -35,6 +41,14 @@ module.exports = {
   }
 }
 ```
+
+rules:
+- no-console
+- i18n-usage
+
+### Rule: i18n-usage
+- legal: `$gt('abc'), $gt('hello {world}', null, { world: 'world' })`
+- illegal: `$gt()`, `$gt(12), $gt(1 + 2), $gt(null), $gt(undefined), $gt(x), $gt(x, null, {})`
 
 ## 第一个eslint规则：no-console
 为了简单，我们只使用tsc进行构建。首先`package.json`需要设置入口`"main": "dist/index.js",`，`tsconfig.json`需要设置`"outDir": "dist"`、`"include": ["src"]`。接下来设计一下单元测试和构建命令：
@@ -186,6 +200,36 @@ export default rule;
 yarn test
 ```
 
+### 测试用例的编写
+这里只是一个简单的介绍，更具体的介绍参见下一个名为《测试用例的编写》的章节。基本格式如下：
+
+```ts
+import rule from '../src/rules/noConsole';
+import { ESLintUtils } from '@typescript-eslint/utils';
+
+const ruleTester = new ESLintUtils.RuleTester({
+  parser: '@typescript-eslint/parser'
+});
+
+ruleTester.run('no-console', rule, {
+  valid: [
+    { code }
+  ],
+  invalid: [
+    {
+      code,
+      options: [
+        { param1, param2 }
+      ], // 向待测试规则传入的参数
+      // 不含有修复建议的eslint错误
+      errors: [{ messageId: 'rememberToDelete' }]
+    }
+  ]
+});
+```
+
+在IDE中，将鼠标放上去即可看到类型推断结果和官方解释，单击即可查看完整的类型定义。
+
 ### 本地查看效果
 首先：
 
@@ -312,10 +356,10 @@ if (Array.isArray(excludedFiles)) {
 
 TODO：是否能够mock `context.getFilename()`，让本地可以写测试用例？
 
-## 检测不合法的i18n方法使用方式
+## i18n-usage规则：检测不合法的i18n方法使用方式
 在Vue里，我们通过调用`i18n`方法来实现国际化。于是我们可能会希望实现一个eslint规则，指出用户调用`i18n`方法的方式不合法。输入参数：`i18nFunctionNames: string[]`，指定是`i18n`的方法名，也就是这条eslint规则的检测范围，比如`['$gt', '$t', '$i18n']`。不合法情形：
 - 不传入参数。如：`$gt()`。
-- 第一个参数不是字符串字面量（String Literal）。如：`$gt(12), $gt(1 + 2), $gt(null), $gt(undefined)`。
+- 第一个参数不是字符串字面量（String Literal）。如：`$gt(12), $gt(1 + 2), $gt(null), $gt(undefined), $gt(x), $gt(x, null, {})`。
 
 从本质上来说，实现它并不比上文的`no-console`规则难。所以我仅指出实现上的注意点：
 1. 规则的`meta.messages`的一条消息可以是string template，`context.report`可以向string template传入参数。比如：`meta.messages = { a: '{{var}}' }`，`context.report({ node, messageId: 'a', data: { var } })`，我们通过`data`属性向消息的string template传入参数。这个功能有什么用呢？我们在给出eslint提示的时候，希望给出我们检测出的用户正在使用的`i18n`方法名，就可以用这个功能实现。
@@ -345,6 +389,117 @@ module.exports = {
 效果：
 
 ![2-i18n方法用法检测效果图](./README_assets/2-i18n%E6%96%B9%E6%B3%95%E7%94%A8%E6%B3%95%E6%A3%80%E6%B5%8B%E6%95%88%E6%9E%9C%E5%9B%BE.png)
+
+## i18n-usage规则：自动修复功能——eslint fix函数的使用
+接下来我们为上面实现的`i18n-usage`规则添加一个自动修复功能。为了优化用户体验，我们约定：
+- 对于`$i18n(x)`这种第一个参数是标识符的情况，修复为`$i18n('{x}', null, { x })`。
+- 对于`$i18n(a[0]+a[1]*a[2])`这种第一个参数不是标识符的情况，修复为`$i18n('{value}', null, { value: a[0] + a[1] * a[2] })`。注意这里进行了格式化，因为我在实现时使用了`escodegen`来输出第一个参数的AST节点的代码。
+- 对于`$i18n(arg0, arg1, ...)`这种多于1个参数，和没有参数的情况，不修复。
+
+另外：
+1. 要求在执行`yarn lint`时自动修复。为了实现这条需求，我们可以为`context.report`方法传入的对象指定一个`fix`函数。
+2. 在vscode可以看到“快速修复”的建议，我们希望在那显示一条建议信息。为了实现这条需求，我们可以为`context.report`方法传入的对象指定一个`suggest`数组。
+
+下面是一个能同时实现上面两点需求的简单🌰：
+
+```js
+context.report({
+  *fix(fixer) {
+    yield fixer.replaceText(node, 'str');
+    yield fixer.insertBefore(node, 'str');
+  },
+  suggest: [
+    {
+      messageId: 'autofixFirstArgSuggest',
+      data: { i18nFunctionName, replaceResult },
+      *fix (fixer) {
+        yield fixer.replaceText(node, 'str');
+        yield fixer.insertBefore(node, 'str');
+      }
+    }
+  ]
+});
+```
+
+`fixer`提供的方法可在IDE中点击变量查看：
+
+```ts
+interface RuleFixer {
+  insertTextAfter(nodeOrToken: TSESTree.Node | TSESTree.Token, text: string): RuleFix;
+  insertTextAfterRange(range: Readonly<AST.Range>, text: string): RuleFix;
+  insertTextBefore(nodeOrToken: TSESTree.Node | TSESTree.Token, text: string): RuleFix;
+  insertTextBeforeRange(range: Readonly<AST.Range>, text: string): RuleFix;
+  remove(nodeOrToken: TSESTree.Node | TSESTree.Token): RuleFix;
+  removeRange(range: Readonly<AST.Range>): RuleFix;
+  replaceText(nodeOrToken: TSESTree.Node | TSESTree.Token, text: string): RuleFix;
+  replaceTextRange(range: Readonly<AST.Range>, text: string): RuleFix;
+}
+```
+
+实现修复功能唯一的难点是：第一个参数不是标识符的情况如何修复。有一种可行的方式是：
+
+```js
+yield fixer.insertTextBefore(args[0], '\'{value}\', null, { value: ');
+yield fixer.insertTextAfter(args[0], ' }');
+```
+
+但后来了解到，类似于`@babel/generator`，`escodegen`这个包可以输入`espree`（eslint所使用的AST）的AST节点，输出代码。因此我们有了更简单的实现方式：
+
+```js
+const args0Code = escodegen.generate(args[0]);
+yield fixer.replaceText(args[0], `'{value}', null, { value: ${args0Code} }`);
+```
+
+[代码传送门](https://github.com/Hans774882968/eslint-plugin-use-i18n-hans/blob/main/src/rules/i18nUsage.ts)
+
+### 测试用例的编写
+添加自动修复功能后，测试用例的格式会有些变化。[代码传送门](https://github.com/Hans774882968/eslint-plugin-use-i18n-hans/blob/main/test/i18nUsage.test.ts)
+
+```ts
+const v = {
+  code: basicCaseInputCodes[6],
+  options: [
+    { i18nFunctionNames: ['$i18n'] }
+  ], // 向待测试规则传入的参数
+  output: basicCaseOutputCodes[6], // 所有修复都应用后输出的完整代码
+  errors: [
+    {
+      messageId: 'firstArgShouldBeString',
+      // 修复建议的数组
+      suggestions: [
+        {
+          // 显示在IDE上的修复建议
+          messageId: 'autofixFirstArgSuggest',
+          data: { i18nFunctionName, replaceResult },
+          // 这条修复建议应用后输出的完整代码
+          output
+        }
+      ]
+    }
+    // 不含有修复建议的eslint错误
+    { messageId: 'parameter' },
+    // ...
+  ]
+}
+```
+
+需要注意“两个output”的区别：`output`是所有修复都应用后输出的**完整代码**，`errors[i].suggestion[j].output`是**只有这条修复建议**应用后输出的**完整代码**。官方解释如下：
+
+- `output`：The expected code after autofixes are applied. If set to null, the test runner will assert that no autofix is suggested.
+- `errors[i].suggestion[j].output`：Suggestions will be applied as a stand-alone change, without triggering multi-pass fixes. Each individual error has its own suggestion, so you have to show the correct, isolated output for each suggestion.
+
+### 效果
+修复前：
+
+![3-1-i18n-usage-修复前](./README_assets/3-1-i18n-usage-%E4%BF%AE%E5%A4%8D%E5%89%8D.png)
+
+`format on save`修复后：
+
+![3-2-i18n-usage-修复后](./README_assets/3-2-i18n-usage-%E4%BF%AE%E5%A4%8D%E5%90%8E.png)
+
+修复建议：
+
+![3-3-i18n-usage-修复建议](./README_assets/3-3-i18n-usage-%E4%BF%AE%E5%A4%8D%E5%BB%BA%E8%AE%AE.png)
 
 ## 发布npm包
 [参考链接3](https://juejin.cn/post/7170635418549878814)。
