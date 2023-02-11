@@ -1,6 +1,6 @@
 {
   "name": "@hans774882968/eslint-plugin-use-i18n",
-  "version": "1.0.6",
+  "version": "1.0.7",
   "description": "The function of this eslint plugin is to remind you to use i18n() method correctly",
   "main": "dist/index.js",
   "files": [
