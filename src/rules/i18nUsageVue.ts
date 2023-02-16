@@ -1,5 +1,5 @@
+import eslintPluginVue from 'eslint-plugin-vue/lib/utils';
 import { TSESLint, ASTUtils, TSESTree } from '@typescript-eslint/utils';
-import createRule from '../utils/createRule';
 import escodegen from 'escodegen';
 
 const {
@@ -26,13 +26,14 @@ function getFunctionName (node: TSESTree.CallExpression) {
 
 export type MessageIDS = 'parameter' | 'firstArgShouldBeString' | 'autofixFirstArgSuggest';
 
-const rule = createRule({
-  name: 'i18n-usage',
+export default {
+  name: 'i18n-usage-vue',
   meta: {
     docs: {
       description: 'Detect illegal usage of i18n()',
       recommended: 'error',
-      requiresTypeChecking: false
+      requiresTypeChecking: false,
+      url: 'https://github.com/Hans774882968/eslint-plugin-use-i18n-hans/blob/main/README.md'
     },
     messages: {
       parameter: 'This i18n method {{i18nFunctionName}}() requires parameters.',
@@ -54,15 +55,13 @@ const rule = createRule({
     ]
   },
   defaultOptions: [{ i18nFunctionNames: new Array<string>() }],
-  create (
-    context: Readonly<TSESLint.RuleContext<MessageIDS, Options>>
-  ) {
+  create (context: Readonly<TSESLint.RuleContext<MessageIDS, Options>>) {
     const options = context.options[0] || {};
     let { i18nFunctionNames } = options;
     i18nFunctionNames = Array.isArray(i18nFunctionNames) && i18nFunctionNames.length ? i18nFunctionNames : ['$gt'];
 
-    return {
-      CallExpression (node) {
+    const templateVisitor = {
+      CallExpression (node: TSESTree.CallExpression) {
         const i18nFunctionName = getFunctionName(node);
         if (!i18nFunctionName || !i18nFunctionNames.includes(i18nFunctionName)) return;
         const args = node.arguments;
@@ -130,7 +129,7 @@ const rule = createRule({
         });
       }
     };
-  }
-});
 
-export default rule;
+    return eslintPluginVue.defineTemplateBodyVisitor(context, templateVisitor);
+  }
+};

@@ -125,6 +125,9 @@ const bigCaseInputCodes = [
   `
 ];
 
+// 有一些有意思的案例无法编写单测，只能在工程里测。比如：$t($t(x))，单测给出的修复后output并不是
+// $t('{value}', null, { value: $t('{x}', null, { x }) })，但实测看到的就是这个。
+
 // 注意：需要模拟的是单处格式化的结果
 const bigCaseOutputCodes = [
   [

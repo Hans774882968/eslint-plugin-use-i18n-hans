@@ -62,6 +62,7 @@ module.exports = {
       'always',
       { arraysInObjects: true, objectsInObjects: false }
     ],
-    'no-constant-condition': ['error', { 'checkLoops': false }]
+    'no-constant-condition': ['error', { 'checkLoops': false }],
+    'no-multiple-empty-lines': ['error', { 'max': 1, 'maxEOF': 0 }]
   }
 };

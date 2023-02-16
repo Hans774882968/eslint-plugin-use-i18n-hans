@@ -6,6 +6,10 @@
 - 你对AST遍历有所了解。
 - 你写过单测用例。
 
+[GitHub index](https://github.com/Hans774882968/eslint-plugin-use-i18n-hans)
+
+[npm package index](https://www.npmjs.com/package/@hans774882968/eslint-plugin-use-i18n)
+
 **作者：[hans774882968](https://blog.csdn.net/hans774882968)以及[hans774882968](https://juejin.cn/user/1464964842528888)以及[hans774882968](https://www.52pojie.cn/home.php?mod=space&uid=1906177)**
 
 本文52pojie：https://www.52pojie.cn/thread-1742210-1-1.html
@@ -198,6 +202,12 @@ export default rule;
 
 ```bash
 yarn test
+```
+
+只测一个文件：
+
+```bash
+yarn test "test/i18nUsageVue.test.ts"
 ```
 
 ### 测试用例的编写
@@ -501,6 +511,30 @@ const v = {
 
 ![3-3-i18n-usage-修复建议](./README_assets/3-3-i18n-usage-%E4%BF%AE%E5%A4%8D%E5%BB%BA%E8%AE%AE.png)
 
+## 修复vue文件的Parsing error
+这个版本有一个小问题：对于有vue文件的项目，报错`error  Parsing error: '>' expected`。
+
+我一开始想用`context.getFilename()`获取文件后缀名，避免解析vue文件。但看到[参考链接7](https://eslint.vuejs.org/user-guide/#how-to-use-a-custom-parser)后尝试了一下，发现也可行。
+
+以`src/configs/all.ts`为例，其他config同理。首先`yarn add vue-eslint-parser`，然后把`parser: '@typescript-eslint/parser'`修改为：
+
+```ts
+export default {
+  parser: 'vue-eslint-parser',
+  parserOptions: {
+    parser: '@typescript-eslint/parser',
+    sourceType: 'module'
+  },
+  rules: {
+    '@hans774882968/use-i18n/no-console': 'error',
+    '@hans774882968/use-i18n/i18n-usage': 'error'
+  }
+};
+```
+
+## i18n-usage-vue规则：在vue template中检测不合法的i18n方法使用方式
+TODO
+
 ## 发布npm包
 [参考链接3](https://juejin.cn/post/7170635418549878814)。
 
@@ -543,27 +577,6 @@ npm deprecate <package_name>@<version> "deprecate reason"
 ```
 
 一般不建议使用`unpublish`，而是用`deprecated`代替。
-
-## 修复vue文件的Parsing error
-这个版本有一个小问题：对于有vue文件的项目，报错`error  Parsing error: '>' expected`。
-
-我一开始想用`context.getFilename()`获取文件后缀名，避免解析vue文件。但看到[参考链接7](https://eslint.vuejs.org/user-guide/#how-to-use-a-custom-parser)后尝试了一下，发现也可行。
-
-以`src/configs/all.ts`为例，其他config同理。首先`yarn add vue-eslint-parser`，然后把`parser: '@typescript-eslint/parser'`修改为：
-
-```ts
-export default {
-  parser: 'vue-eslint-parser',
-  parserOptions: {
-    parser: '@typescript-eslint/parser',
-    sourceType: 'module'
-  },
-  rules: {
-    '@hans774882968/use-i18n/no-console': 'error',
-    '@hans774882968/use-i18n/i18n-usage': 'error'
-  }
-};
-```
 
 ## 参考资料
 1. 值得参考的教程：https://www.darraghoriordan.com/2021/11/06/how-to-write-an-eslint-plugin-typescript/
