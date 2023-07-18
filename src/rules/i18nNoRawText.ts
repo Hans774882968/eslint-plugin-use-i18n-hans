@@ -14,6 +14,7 @@ type TagNameToAttrsMap = Record<string, string[]>;
 
 type ConfigOption = {
   attributes?: TagNameToAttrsMap,
+  i18nFunctionNames?: string[],
   ignorePattern?: string,
   ignoreText?: string[]
 };
@@ -23,6 +24,7 @@ type ParsedConfigOption = {
     name: RegExp,
     attrs: Set<string>
   }[],
+  i18nFunctionNames: string[],
   ignorePattern: RegExp,
   ignoreText: string[]
 };
@@ -59,7 +61,7 @@ function shouldNotReportError (
       hasOnlyWhitespace(value) ||
       options.ignorePattern.test(value.trim()) ||
       options.ignoreText.includes(value.trim()) ||
-      /^\$gt|\$t/.test(value.trim())
+      options.i18nFunctionNames.some((name) => value.trim().startsWith(name))
   );
 }
 
@@ -68,7 +70,8 @@ function checkText (context: ContextType, textNode: AST.VText, options: ParsedCo
   if (shouldNotReportError(value, options)) {
     return;
   }
-  const replaceResult = `{{ $gt('${value.replace(/\r\n\s\t/, '').trim()}') }}`;
+  const i18nFunctionName = options.i18nFunctionNames[0];
+  const replaceResult = `{{ ${i18nFunctionName}('${value.replace(/\r\n\s\t/, '').trim()}') }}`;
   context.report({
     node: textNode as any,
     messageId: 'rawTextUsed',
@@ -79,7 +82,7 @@ function checkText (context: ContextType, textNode: AST.VText, options: ParsedCo
     suggest: [
       {
         messageId: 'autofixRawTextSuggest',
-        data: { replaceResult },
+        data: { i18nFunctionName, replaceResult },
         fix (fixer) {
           return fixer.replaceText(textNode as any, replaceResult);
         }
@@ -93,7 +96,8 @@ function checkLiteral (context: ContextType, literal: staticLiteralTypes, option
   if (shouldNotReportError(value, options)) {
     return;
   }
-  const replaceResult = `$gt('${value}')`;
+  const i18nFunctionName = options.i18nFunctionNames[0];
+  const replaceResult = `${i18nFunctionName}('${value}')`;
   context.report({
     node: literal as any,
     messageId: 'rawTextUsed',
@@ -104,7 +108,7 @@ function checkLiteral (context: ContextType, literal: staticLiteralTypes, option
     suggest: [
       {
         messageId: 'autofixRawTextSuggest',
-        data: { replaceResult },
+        data: { i18nFunctionName, replaceResult },
         fix (fixer) {
           return fixer.replaceText(literal as any, replaceResult);
         }
@@ -135,7 +139,8 @@ function checkVAttribute (context: ContextType, node: AST.VAttribute, options: P
   if (shouldNotReportError(value, options)) {
     return;
   }
-  const replaceResult = `"$gt('${value}')"`;
+  const i18nFunctionName = options.i18nFunctionNames[0];
+  const replaceResult = `"${i18nFunctionName}('${value}')"`;
   function *fixFunction (fixer: TSESLint.RuleFixer) {
     yield fixer.insertTextBefore(node as any, ':');
     yield fixer.replaceText(literal as any, replaceResult);
@@ -150,7 +155,7 @@ function checkVAttribute (context: ContextType, node: AST.VAttribute, options: P
     suggest: [
       {
         messageId: 'autofixRawTextSuggest',
-        data: { replaceResult },
+        data: { i18nFunctionName, replaceResult },
         *fix (fixer) {
           for (const v of fixFunction(fixer)) yield v;
         }
@@ -189,7 +194,7 @@ export default {
     },
     messages: {
       rawTextUsed: 'Raw text \'{{textValue}}\' is used.',
-      autofixRawTextSuggest: 'Change to {{replaceResult}}.'
+      autofixRawTextSuggest: 'Change to {{i18nFunctionName}}({{replaceResult}}).'
     },
     type: 'problem',
     hasSuggestions: true, // 不加这个属性会报错 TypeError: Converting circular structure to JSON
@@ -208,6 +213,9 @@ export default {
             },
             additionalProperties: false
           },
+          i18nFunctionNames: {
+            type: 'array'
+          },
           ignorePattern: {
             type: 'string'
           },
@@ -219,6 +227,8 @@ export default {
     ]
   },
   defaultOptions: [{
+    attributes: Array<object>(),
+    i18nFunctionNames: Array<string>(),
     ignorePattern: '',
     ignoreText: Array<string>()
   }],
@@ -226,8 +236,9 @@ export default {
     context: ContextType
   ) {
     const options = context.options[0] || {};
-    const parsedOptions = {
+    const parsedOptions: ParsedConfigOption = {
       attributes: parseTargetAttrs(options.attributes || {}),
+      i18nFunctionNames: Array.isArray(options.i18nFunctionNames) && options.i18nFunctionNames.length ? options.i18nFunctionNames : ['$gt'],
       ignorePattern: new RegExp(options.ignorePattern || /^$/),
       ignoreText: options.ignoreText || []
     };

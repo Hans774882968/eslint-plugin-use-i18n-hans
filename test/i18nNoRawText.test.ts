@@ -64,6 +64,14 @@ ruleTester.run('i18n-usage-vue', rule as any, {
         attributes: attributeConfig,
         ignoreText: ['hello world', 'acmer']
       }]
+    },
+    {
+      code: '<template><div v-text="\'acmer\'" /></template>',
+      options: [{
+        attributes: attributeConfig,
+        i18nFunctionNames: ['$t'],
+        ignoreText: ['hello world', 'acmer']
+      }]
     }
   ],
   invalid: [
@@ -214,6 +222,43 @@ ruleTester.run('i18n-usage-vue', rule as any, {
       <el-option v-text="NaN" />
       <el-option v-text="undefined" />
       <el-option v-text="$gt('3.14')" />
+    </template>`
+    },
+    {
+      code: `<template>
+      <div v-text="'hello'" />
+      <div v-text="'解密'" content="揭密">{{ true ? "揭秘" : \`解谜\` }}</div>
+    </template>`,
+      options: [{
+        attributes: attributeConfig,
+        i18nFunctionNames: ['$i18n', '$t'],
+        ignoreText: ['hello world', 'acmer']
+      }],
+      errors: [
+        {
+          messageId: 'rawTextUsed',
+          data: { textValue: 'hello' }
+        },
+        {
+          messageId: 'rawTextUsed',
+          data: { textValue: '解密' }
+        },
+        {
+          messageId: 'rawTextUsed',
+          data: { textValue: '揭密' }
+        },
+        {
+          messageId: 'rawTextUsed',
+          data: { textValue: '揭秘' }
+        },
+        {
+          messageId: 'rawTextUsed',
+          data: { textValue: '解谜' }
+        }
+      ],
+      output: `<template>
+      <div v-text="$i18n('hello')" />
+      <div v-text="$i18n('解密')" :content="$i18n('揭密')">{{ true ? $i18n('揭秘') : $i18n('解谜') }}</div>
     </template>`
     }
   ]
