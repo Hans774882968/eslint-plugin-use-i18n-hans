@@ -55,7 +55,9 @@ export default {
     ]
   },
   defaultOptions: [{ i18nFunctionNames: new Array<string>() }],
-  create (context: Readonly<TSESLint.RuleContext<MessageIDS, Options>>) {
+  create (
+    context: Readonly<TSESLint.RuleContext<MessageIDS, Options>>
+  ) {
     const options = context.options[0] || {};
     let { i18nFunctionNames } = options;
     i18nFunctionNames = Array.isArray(i18nFunctionNames) && i18nFunctionNames.length ? i18nFunctionNames : ['$gt'];
