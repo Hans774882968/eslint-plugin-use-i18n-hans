@@ -3,6 +3,12 @@ import { TSESLint } from '@typescript-eslint/utils';
 import { AST } from 'vue-eslint-parser';
 import { isKebabCase, pascalCase } from '../utils/humpsUtils';
 import { toRegExp } from '../utils/utils';
+import { VExpressionContainerExpressionType } from '../types/vue-eslint-parser';
+import {
+  getStaticLiteralValue,
+  isStaticLiteral,
+  staticLiteralTypes
+} from '../utils/vueAstTools';
 
 type TagNameToAttrsMap = Record<string, string[]>;
 
@@ -41,7 +47,10 @@ function parseTargetAttrs (options: TagNameToAttrsMap) {
 
 const hasOnlyWhitespace = (value: string) => /^[\r\n\s\t\f\v]+$/.test(value);
 
-function shouldNotReportError (value: string, options: ParsedConfigOption) {
+function shouldNotReportError (
+  value: string | number | bigint | boolean | RegExp | null,
+  options: ParsedConfigOption
+) {
   if (typeof value !== 'string') {
     return !value;
   }
@@ -61,6 +70,18 @@ function checkText (context: ContextType, textNode: AST.VText, options: ParsedCo
   }
   context.report({
     node: textNode as any,
+    messageId: 'rawTextUsed',
+    data: { textValue: value }
+  });
+}
+
+function checkLiteral (context: ContextType, literal: staticLiteralTypes, options: ParsedConfigOption) {
+  const value = getStaticLiteralValue(literal);
+  if (shouldNotReportError(value, options)) {
+    return;
+  }
+  context.report({
+    node: literal as any,
     messageId: 'rawTextUsed',
     data: { textValue: value }
   });
@@ -93,6 +114,25 @@ function checkVAttribute (context: ContextType, node: AST.VAttribute, options: P
     messageId: 'rawTextUsed',
     data: { textValue: value }
   });
+}
+
+function checkVAttributeDirective (context: ContextType, node: AST.VDirective, options: ParsedConfigOption) {
+  if (node.key.name.name !== 'text' || !node.value?.expression) return;
+  // 只处理 v-text，不处理 v-bind 等
+  checkExpressionContainerText(context, node.value.expression, options);
+}
+
+function checkExpressionContainerText (context: ContextType, expression: VExpressionContainerExpressionType, options: ParsedConfigOption) {
+  if (isStaticLiteral(expression)) {
+    checkLiteral(context, expression, options);
+  } else if (expression?.type === 'ConditionalExpression') {
+    const targets = [expression.consequent, expression.alternate];
+    targets.forEach((target) => {
+      if (isStaticLiteral(target)) {
+        checkLiteral(context, target, options);
+      }
+    });
+  }
 }
 
 export default {
@@ -149,11 +189,18 @@ export default {
     };
 
     const templateVisitor = {
+      VExpressionContainer (node: AST.VExpressionContainer) {
+        if (!node.expression || !node.parent || node.parent.type !== 'VElement') return;
+        // 处理 <custom-component>{{ exp }}</custom-component>
+        checkExpressionContainerText(context, node.expression, parsedOptions);
+      },
       VText (node: AST.VText) {
         checkText(context, node, parsedOptions);
       },
       VAttribute (node: AST.VAttribute | AST.VDirective) {
         if (node.directive) {
+          if (!node.value) return;
+          checkVAttributeDirective(context, node, parsedOptions);
           return;
         }
         const tagName = node.parent.parent.rawName;

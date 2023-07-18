@@ -53,6 +53,17 @@ ruleTester.run('i18n-usage-vue', rule as any, {
         attributes: attributeConfig,
         ignoreText: ['hello world', 'acmer']
       }]
+    },
+    {
+      code: `<template>
+      <custom-component title="hello world" />
+      <div v-text="'acmer'" />
+      <custom-component title="acmer">{{ \`hello world\` }}</custom-component>
+    </template>`,
+      options: [{
+        attributes: attributeConfig,
+        ignoreText: ['hello world', 'acmer']
+      }]
     }
   ],
   invalid: [
@@ -100,6 +111,41 @@ ruleTester.run('i18n-usage-vue', rule as any, {
         {
           messageId: 'rawTextUsed',
           data: { textValue: '用户名' }
+        }
+      ]
+    },
+    {
+      code: `<template>
+      <input placeholder="hello-world" />
+      <div v-text="true ? 'acmer7' : \`acmer8\${value}\`" />
+      <custom-component title="acmer">{{ false ? \`template string\` : 'normal string' }}</custom-component>
+      <input placeholder="hello world">{{ true ? 0x1bf52 : undefined }}</input>
+    </template>`,
+      // 在这个 case 发现， vue-eslint-parser9.1.0 还不支持 0x1bf52n 这种 bigint 的解析
+      options: [{
+        attributes: attributeConfig,
+        ignoreText: ['hello world', 'acmer']
+      }],
+      errors: [
+        {
+          messageId: 'rawTextUsed',
+          data: { textValue: 'hello-world' }
+        },
+        {
+          messageId: 'rawTextUsed',
+          data: { textValue: 'acmer7' }
+        },
+        {
+          messageId: 'rawTextUsed',
+          data: { textValue: 'template string' }
+        },
+        {
+          messageId: 'rawTextUsed',
+          data: { textValue: 'normal string' }
+        },
+        {
+          messageId: 'rawTextUsed',
+          data: { textValue: '114514' }
         }
       ]
     }
