@@ -29,7 +29,7 @@ type ParsedConfigOption = {
 
 type Options = [ConfigOption];
 
-export type MessageIDS = 'rawTextUsed';
+export type MessageIDS = 'rawTextUsed' | 'autofixRawTextSuggest';
 
 type ContextType = Readonly<TSESLint.RuleContext<MessageIDS, Options>>;
 
@@ -68,10 +68,23 @@ function checkText (context: ContextType, textNode: AST.VText, options: ParsedCo
   if (shouldNotReportError(value, options)) {
     return;
   }
+  const replaceResult = `{{ $gt('${value.replace(/\r\n\s\t/, '').trim()}') }}`;
   context.report({
     node: textNode as any,
     messageId: 'rawTextUsed',
-    data: { textValue: value }
+    data: { textValue: value },
+    fix (fixer) {
+      return fixer.replaceText(textNode as any, replaceResult);
+    },
+    suggest: [
+      {
+        messageId: 'autofixRawTextSuggest',
+        data: { replaceResult },
+        fix (fixer) {
+          return fixer.replaceText(textNode as any, replaceResult);
+        }
+      }
+    ]
   });
 }
 
@@ -80,10 +93,23 @@ function checkLiteral (context: ContextType, literal: staticLiteralTypes, option
   if (shouldNotReportError(value, options)) {
     return;
   }
+  const replaceResult = `$gt('${value}')`;
   context.report({
     node: literal as any,
     messageId: 'rawTextUsed',
-    data: { textValue: value }
+    data: { textValue: value },
+    fix (fixer) {
+      return fixer.replaceText(literal as any, replaceResult);
+    },
+    suggest: [
+      {
+        messageId: 'autofixRawTextSuggest',
+        data: { replaceResult },
+        fix (fixer) {
+          return fixer.replaceText(literal as any, replaceResult);
+        }
+      }
+    ]
   });
 }
 
@@ -109,10 +135,27 @@ function checkVAttribute (context: ContextType, node: AST.VAttribute, options: P
   if (shouldNotReportError(value, options)) {
     return;
   }
+  const replaceResult = `"$gt('${value}')"`;
+  function *fixFunction (fixer: TSESLint.RuleFixer) {
+    yield fixer.insertTextBefore(node as any, ':');
+    yield fixer.replaceText(literal as any, replaceResult);
+  }
   context.report({
     node: node as any,
     messageId: 'rawTextUsed',
-    data: { textValue: value }
+    data: { textValue: value },
+    *fix (fixer) {
+      for (const v of fixFunction(fixer)) yield v;
+    },
+    suggest: [
+      {
+        messageId: 'autofixRawTextSuggest',
+        data: { replaceResult },
+        *fix (fixer) {
+          for (const v of fixFunction(fixer)) yield v;
+        }
+      }
+    ]
   });
 }
 
@@ -145,7 +188,8 @@ export default {
       url: 'https://github.com/Hans774882968/eslint-plugin-use-i18n-hans/blob/main/README.md'
     },
     messages: {
-      rawTextUsed: 'Raw text \'{{textValue}}\' is used.'
+      rawTextUsed: 'Raw text \'{{textValue}}\' is used.',
+      autofixRawTextSuggest: 'Change to {{replaceResult}}.'
     },
     type: 'problem',
     hasSuggestions: true, // 不加这个属性会报错 TypeError: Converting circular structure to JSON
