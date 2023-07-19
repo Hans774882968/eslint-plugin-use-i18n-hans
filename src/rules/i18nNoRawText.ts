@@ -82,7 +82,7 @@ function checkText (context: ContextType, textNode: AST.VText, options: ParsedCo
     suggest: [
       {
         messageId: 'autofixRawTextSuggest',
-        data: { i18nFunctionName, replaceResult },
+        data: { replaceResult },
         fix (fixer) {
           return fixer.replaceText(textNode as any, replaceResult);
         }
@@ -108,7 +108,7 @@ function checkLiteral (context: ContextType, literal: staticLiteralTypes, option
     suggest: [
       {
         messageId: 'autofixRawTextSuggest',
-        data: { i18nFunctionName, replaceResult },
+        data: { replaceResult },
         fix (fixer) {
           return fixer.replaceText(literal as any, replaceResult);
         }
@@ -155,7 +155,7 @@ function checkVAttribute (context: ContextType, node: AST.VAttribute, options: P
     suggest: [
       {
         messageId: 'autofixRawTextSuggest',
-        data: { i18nFunctionName, replaceResult },
+        data: { replaceResult },
         *fix (fixer) {
           for (const v of fixFunction(fixer)) yield v;
         }
@@ -183,6 +183,7 @@ function checkExpressionContainerText (context: ContextType, expression: VExpres
   }
 }
 
+// 参考 @intlify/vue-i18n https://github.com/intlify/eslint-plugin-vue-i18n/blob/master/lib/rules/no-raw-text.ts
 export default {
   name: 'i18n-no-raw-text',
   meta: {
@@ -194,7 +195,7 @@ export default {
     },
     messages: {
       rawTextUsed: 'Raw text \'{{textValue}}\' is used.',
-      autofixRawTextSuggest: 'Change to {{i18nFunctionName}}({{replaceResult}}).'
+      autofixRawTextSuggest: 'Change to {{replaceResult}}.'
     },
     type: 'problem',
     hasSuggestions: true, // 不加这个属性会报错 TypeError: Converting circular structure to JSON
