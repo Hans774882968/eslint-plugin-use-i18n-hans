@@ -46,7 +46,6 @@ module.exports = {
     'comma-dangle': ['error', 'never'],
     'comma-spacing': 'error',
     'eol-last': 'error',
-    // 使用2个空格
     'indent': ['error', 2, { SwitchCase: 1 }],
     'key-spacing': 'error',
     'keyword-spacing': ['error', { 'before': true }], // } else if() {
