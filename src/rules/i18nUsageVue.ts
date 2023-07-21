@@ -1,6 +1,6 @@
-import eslintPluginVue from 'eslint-plugin-vue/lib/utils';
-import { TSESLint, ASTUtils, TSESTree } from '@typescript-eslint/utils';
+import { ASTUtils, TSESLint, TSESTree } from '@typescript-eslint/utils';
 import escodegen from 'escodegen';
+import eslintPluginVue from 'eslint-plugin-vue/lib/utils';
 
 const {
   isIdentifier
@@ -27,34 +27,6 @@ function getFunctionName (node: TSESTree.CallExpression) {
 export type MessageIDS = 'parameter' | 'firstArgShouldBeString' | 'autofixFirstArgSuggest';
 
 export default {
-  name: 'i18n-usage-vue',
-  meta: {
-    docs: {
-      description: 'Detect illegal usage of i18n()',
-      recommended: 'error',
-      requiresTypeChecking: false,
-      url: 'https://github.com/Hans774882968/eslint-plugin-use-i18n-hans/blob/main/README.md'
-    },
-    messages: {
-      parameter: 'This i18n method {{i18nFunctionName}}() requires parameters.',
-      firstArgShouldBeString: 'The first argument of {{i18nFunctionName}}() must be a string.' +
-        ' If you need to use variable, you can use: {{i18nFunctionName}}("hello {name}", null, {name: "world"}).',
-      autofixFirstArgSuggest: 'Change to {{i18nFunctionName}}({{replaceResult}}).'
-    },
-    type: 'problem',
-    hasSuggestions: true, // 不加这个属性会报错 TypeError: Converting circular structure to JSON
-    fixable: 'code', // 不加这个属性会报错 TypeError: Converting circular structure to JSON
-    schema: [
-      {
-        properties: {
-          i18nFunctionNames: {
-            type: 'array'
-          }
-        }
-      }
-    ]
-  },
-  defaultOptions: [{ i18nFunctionNames: new Array<string>() }],
   create (
     context: Readonly<TSESLint.RuleContext<MessageIDS, Options>>
   ) {
@@ -69,9 +41,9 @@ export default {
         const args = node.arguments;
         if (!args.length) {
           context.report({
-            node,
+            data: { i18nFunctionName },
             messageId: 'parameter',
-            data: { i18nFunctionName }
+            node
           });
           return;
         }
@@ -80,9 +52,9 @@ export default {
         }
         if (args.length >= 2) {
           context.report({
-            node,
+            data: { i18nFunctionName },
             messageId: 'firstArgShouldBeString',
-            data: { i18nFunctionName }
+            node
           });
           return;
         }
@@ -113,19 +85,19 @@ export default {
         const replaceResult = getReplaceResult();
 
         context.report({
-          node,
-          messageId: 'firstArgShouldBeString',
           data: { i18nFunctionName },
           fix (fixer) {
             return fixer.replaceText(args[0], replaceResult);
           },
+          messageId: 'firstArgShouldBeString',
+          node,
           suggest: [
             {
-              messageId: 'autofixFirstArgSuggest',
               data: { i18nFunctionName, replaceResult },
               fix (fixer) {
                 return fixer.replaceText(args[0], replaceResult);
-              }
+              },
+              messageId: 'autofixFirstArgSuggest'
             }
           ]
         });
@@ -133,5 +105,37 @@ export default {
     };
 
     return eslintPluginVue.defineTemplateBodyVisitor(context, templateVisitor);
-  }
+  },
+  defaultOptions: [{ i18nFunctionNames: new Array<string>() }],
+  meta: {
+    docs: {
+      description: 'Detect illegal usage of i18n()',
+      recommended: 'error',
+      requiresTypeChecking: false,
+      url: 'https://github.com/Hans774882968/eslint-plugin-use-i18n-hans/blob/main/README.md'
+    },
+    // 不加这个属性会报错 TypeError: Converting circular structure to JSON
+    fixable: 'code',
+
+    hasSuggestions: true,
+
+    messages: {
+      autofixFirstArgSuggest: 'Change to {{i18nFunctionName}}({{replaceResult}}).',
+      firstArgShouldBeString: 'The first argument of {{i18nFunctionName}}() must be a string.' +
+        ' If you need to use variable, you can use: {{i18nFunctionName}}("hello {name}", null, {name: "world"}).',
+      parameter: 'This i18n method {{i18nFunctionName}}() requires parameters.'
+    },
+    // 不加这个属性会报错 TypeError: Converting circular structure to JSON
+    schema: [
+      {
+        properties: {
+          i18nFunctionNames: {
+            type: 'array'
+          }
+        }
+      }
+    ],
+    type: 'problem'
+  },
+  name: 'i18n-usage-vue'
 };

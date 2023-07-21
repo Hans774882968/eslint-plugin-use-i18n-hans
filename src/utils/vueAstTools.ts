@@ -1,8 +1,8 @@
+import { AST } from 'vue-eslint-parser';
 import {
   VESLintLiteralTypes,
   VExpressionContainerExpressionType
 } from '../types/vue-eslint-parser';
-import { AST } from 'vue-eslint-parser';
 
 export type staticLiteralTypes = VESLintLiteralTypes | AST.ESLintTemplateLiteral;
 

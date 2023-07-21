@@ -1,7 +1,7 @@
-import { TSESLint, ASTUtils } from '@typescript-eslint/utils';
+import { ASTUtils, TSESLint } from '@typescript-eslint/utils';
 import createRule from '../utils/createRule';
-import path from 'path';
 import multimatch from 'multimatch';
+import path from 'path';
 
 const {
   isIdentifier
@@ -14,28 +14,6 @@ type Options = [{
 const whiteList = ['memory'];
 
 const rule = createRule({
-  name: 'no-console',
-  meta: {
-    docs: {
-      description: 'Remember to delete console.{{methodName}}()',
-      recommended: 'error',
-      requiresTypeChecking: false
-    },
-    messages: {
-      rememberToDelete: 'Remember to delete console.{{methodName}}()'
-    },
-    type: 'problem',
-    schema: [
-      {
-        properties: {
-          excludedFiles: {
-            type: 'array'
-          }
-        }
-      }
-    ]
-  },
-  defaultOptions: [{ excludedFiles: new Array<string>() }],
   create (
     context: Readonly<TSESLint.RuleContext<'rememberToDelete', Options>>
   ) {
@@ -60,13 +38,35 @@ const rule = createRule({
           return;
         }
         context.report({
-          node,
+          data: { methodName },
           messageId: 'rememberToDelete',
-          data: { methodName }
+          node
         });
       }
     };
-  }
+  },
+  defaultOptions: [{ excludedFiles: new Array<string>() }],
+  meta: {
+    docs: {
+      description: 'Remember to delete console.{{methodName}}()',
+      recommended: 'error',
+      requiresTypeChecking: false
+    },
+    messages: {
+      rememberToDelete: 'Remember to delete console.{{methodName}}()'
+    },
+    schema: [
+      {
+        properties: {
+          excludedFiles: {
+            type: 'array'
+          }
+        }
+      }
+    ],
+    type: 'problem'
+  },
+  name: 'no-console'
 });
 
 export default rule;

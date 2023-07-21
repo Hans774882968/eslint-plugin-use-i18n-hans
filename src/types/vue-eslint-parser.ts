@@ -1,15 +1,15 @@
 import {
-  ESLintExpression,
-  VFilterSequenceExpression,
-  VForExpression,
-  VOnExpression,
-  VSlotScopeExpression,
-  ESLintStringLiteral,
+  ESLintBigIntLiteral,
   ESLintBooleanLiteral,
+  ESLintExpression,
   ESLintNullLiteral,
   ESLintNumberLiteral,
   ESLintRegExpLiteral,
-  ESLintBigIntLiteral
+  ESLintStringLiteral,
+  VFilterSequenceExpression,
+  VForExpression,
+  VOnExpression,
+  VSlotScopeExpression
 } from 'vue-eslint-parser/ast';
 
 export type VExpressionContainerExpressionType = ESLintExpression | VFilterSequenceExpression | VForExpression | VOnExpression | VSlotScopeExpression | null;

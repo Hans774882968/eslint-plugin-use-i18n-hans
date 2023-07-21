@@ -1,14 +1,14 @@
-import eslintPluginVue from 'eslint-plugin-vue/lib/utils';
-import { TSESLint } from '@typescript-eslint/utils';
 import { AST } from 'vue-eslint-parser';
-import { isKebabCase, pascalCase } from '../utils/humpsUtils';
-import { toRegExp } from '../utils/utils';
+import { TSESLint } from '@typescript-eslint/utils';
 import { VExpressionContainerExpressionType } from '../types/vue-eslint-parser';
 import {
   getStaticLiteralValue,
   isStaticLiteral,
   staticLiteralTypes
 } from '../utils/vueAstTools';
+import { isKebabCase, pascalCase } from '../utils/humpsUtils';
+import { toRegExp } from '../utils/utils';
+import eslintPluginVue from 'eslint-plugin-vue/lib/utils';
 
 type TagNameToAttrsMap = Record<string, string[]>;
 
@@ -40,8 +40,8 @@ function parseTargetAttrs (options: TagNameToAttrsMap) {
   for (const tagName of Object.keys(options)) {
     const attrs = new Set(options[tagName]);
     regexps.push({
-      name: toRegExp(tagName),
-      attrs
+      attrs,
+      name: toRegExp(tagName)
     });
   }
   return regexps;
@@ -73,19 +73,19 @@ function checkText (context: ContextType, textNode: AST.VText, options: ParsedCo
   const i18nFunctionName = options.i18nFunctionNames[0];
   const replaceResult = `{{ ${i18nFunctionName}('${value.replace(/\r\n\s\t/, '').trim()}') }}`;
   context.report({
-    node: textNode as any,
-    messageId: 'rawTextUsed',
     data: { textValue: value },
     fix (fixer) {
       return fixer.replaceText(textNode as any, replaceResult);
     },
+    messageId: 'rawTextUsed',
+    node: textNode as any,
     suggest: [
       {
-        messageId: 'autofixRawTextSuggest',
         data: { replaceResult },
         fix (fixer) {
           return fixer.replaceText(textNode as any, replaceResult);
-        }
+        },
+        messageId: 'autofixRawTextSuggest'
       }
     ]
   });
@@ -99,19 +99,19 @@ function checkLiteral (context: ContextType, literal: staticLiteralTypes, option
   const i18nFunctionName = options.i18nFunctionNames[0];
   const replaceResult = `${i18nFunctionName}('${value}')`;
   context.report({
-    node: literal as any,
-    messageId: 'rawTextUsed',
     data: { textValue: value },
     fix (fixer) {
       return fixer.replaceText(literal as any, replaceResult);
     },
+    messageId: 'rawTextUsed',
+    node: literal as any,
     suggest: [
       {
-        messageId: 'autofixRawTextSuggest',
         data: { replaceResult },
         fix (fixer) {
           return fixer.replaceText(literal as any, replaceResult);
-        }
+        },
+        messageId: 'autofixRawTextSuggest'
       }
     ]
   });
@@ -146,19 +146,19 @@ function checkVAttribute (context: ContextType, node: AST.VAttribute, options: P
     yield fixer.replaceText(literal as any, replaceResult);
   }
   context.report({
-    node: node as any,
-    messageId: 'rawTextUsed',
     data: { textValue: value },
     *fix (fixer) {
       for (const v of fixFunction(fixer)) yield v;
     },
+    messageId: 'rawTextUsed',
+    node: node as any,
     suggest: [
       {
-        messageId: 'autofixRawTextSuggest',
         data: { replaceResult },
         *fix (fixer) {
           for (const v of fixFunction(fixer)) yield v;
-        }
+        },
+        messageId: 'autofixRawTextSuggest'
       }
     ]
   });
@@ -185,54 +185,6 @@ function checkExpressionContainerText (context: ContextType, expression: VExpres
 
 // 参考 @intlify/vue-i18n https://github.com/intlify/eslint-plugin-vue-i18n/blob/master/lib/rules/no-raw-text.ts
 export default {
-  name: 'i18n-no-raw-text',
-  meta: {
-    docs: {
-      description: 'disallow raw string literal',
-      recommended: 'error',
-      requiresTypeChecking: false,
-      url: 'https://github.com/Hans774882968/eslint-plugin-use-i18n-hans/blob/main/README.md'
-    },
-    messages: {
-      rawTextUsed: 'Raw text \'{{textValue}}\' is used.',
-      autofixRawTextSuggest: 'Change to {{replaceResult}}.'
-    },
-    type: 'problem',
-    hasSuggestions: true, // 不加这个属性会报错 TypeError: Converting circular structure to JSON
-    fixable: 'code', // 不加这个属性会报错 TypeError: Converting circular structure to JSON
-    schema: [
-      {
-        properties: {
-          attributes: {
-            type: 'object',
-            patternProperties: {
-              '^(?:\\S+|/.*/[a-z]*)$': {
-                type: 'array',
-                items: { type: 'string' },
-                uniqueItems: true
-              }
-            },
-            additionalProperties: false
-          },
-          i18nFunctionNames: {
-            type: 'array'
-          },
-          ignorePattern: {
-            type: 'string'
-          },
-          ignoreText: {
-            type: 'array'
-          }
-        }
-      }
-    ]
-  },
-  defaultOptions: [{
-    attributes: Array<object>(),
-    i18nFunctionNames: Array<string>(),
-    ignorePattern: '',
-    ignoreText: Array<string>()
-  }],
   create (
     context: ContextType
   ) {
@@ -245,14 +197,6 @@ export default {
     };
 
     const templateVisitor = {
-      VExpressionContainer (node: AST.VExpressionContainer) {
-        if (!node.expression || !node.parent || node.parent.type !== 'VElement') return;
-        // 处理 <custom-component>{{ exp }}</custom-component>
-        checkExpressionContainerText(context, node.expression, parsedOptions);
-      },
-      VText (node: AST.VText) {
-        checkText(context, node, parsedOptions);
-      },
       VAttribute (node: AST.VAttribute | AST.VDirective) {
         if (node.directive) {
           if (!node.value) return;
@@ -265,8 +209,68 @@ export default {
           return;
         }
         checkVAttribute(context, node, parsedOptions);
+      },
+      VExpressionContainer (node: AST.VExpressionContainer) {
+        if (!node.expression || !node.parent || node.parent.type !== 'VElement') return;
+        // 处理 <custom-component>{{ exp }}</custom-component>
+        checkExpressionContainerText(context, node.expression, parsedOptions);
+      },
+      VText (node: AST.VText) {
+        checkText(context, node, parsedOptions);
       }
     };
     return eslintPluginVue.defineTemplateBodyVisitor(context, templateVisitor);
-  }
+  },
+  defaultOptions: [{
+    attributes: Array<object>(),
+    i18nFunctionNames: Array<string>(),
+    ignorePattern: '',
+    ignoreText: Array<string>()
+  }],
+  meta: {
+    docs: {
+      description: 'disallow raw string literal',
+      recommended: 'error',
+      requiresTypeChecking: false,
+      url: 'https://github.com/Hans774882968/eslint-plugin-use-i18n-hans/blob/main/README.md'
+    },
+    // 不加这个属性会报错 TypeError: Converting circular structure to JSON
+    fixable: 'code',
+
+    hasSuggestions: true,
+
+    messages: {
+      autofixRawTextSuggest: 'Change to {{replaceResult}}.',
+      rawTextUsed: 'Raw text \'{{textValue}}\' is used.'
+    },
+    // 不加这个属性会报错 TypeError: Converting circular structure to JSON
+    schema: [
+      {
+        properties: {
+          attributes: {
+            additionalProperties: false,
+            patternProperties: {
+              '^(?:\\S+|/.*/[a-z]*)$': {
+                items: { type: 'string' },
+                type: 'array',
+                uniqueItems: true
+              }
+            },
+            type: 'object'
+          },
+          i18nFunctionNames: {
+            type: 'array'
+          },
+          ignorePattern: {
+            type: 'string'
+          },
+          ignoreText: {
+            type: 'array'
+          }
+        }
+      }
+    ],
+    type: 'problem'
+  },
+  name: 'i18n-no-raw-text'
 };

@@ -1,25 +1,11 @@
-import rule from '../src/rules/noConsole';
 import { ESLintUtils } from '@typescript-eslint/utils';
+import rule from '../src/rules/noConsole';
 
 const ruleTester = new ESLintUtils.RuleTester({
   parser: '@typescript-eslint/parser'
 });
 
 ruleTester.run('no-console', rule, {
-  valid: [
-    {
-      code: `
-        const x = 1;
-        const y = 2;
-      `
-    },
-    {
-      code: `
-        const x = 1;
-        console.memory;
-      `
-    }
-  ],
   invalid: [
     {
       code: `
@@ -45,6 +31,20 @@ ruleTester.run('no-console', rule, {
         f();
       `,
       errors: [{ messageId: 'rememberToDelete' }]
+    }
+  ],
+  valid: [
+    {
+      code: `
+        const x = 1;
+        const y = 2;
+      `
+    },
+    {
+      code: `
+        const x = 1;
+        console.memory;
+      `
     }
   ]
 });

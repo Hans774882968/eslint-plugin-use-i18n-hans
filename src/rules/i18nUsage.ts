@@ -1,4 +1,4 @@
-import { TSESLint, ASTUtils, TSESTree } from '@typescript-eslint/utils';
+import { ASTUtils, TSESLint, TSESTree } from '@typescript-eslint/utils';
 import createRule from '../utils/createRule';
 import escodegen from 'escodegen';
 
@@ -27,33 +27,6 @@ function getFunctionName (node: TSESTree.CallExpression) {
 export type MessageIDS = 'parameter' | 'firstArgShouldBeString' | 'autofixFirstArgSuggest';
 
 const rule = createRule({
-  name: 'i18n-usage',
-  meta: {
-    docs: {
-      description: 'Detect illegal usage of i18n()',
-      recommended: 'error',
-      requiresTypeChecking: false
-    },
-    messages: {
-      parameter: 'This i18n method {{i18nFunctionName}}() requires parameters.',
-      firstArgShouldBeString: 'The first argument of {{i18nFunctionName}}() must be a string.' +
-        ' If you need to use variable, you can use: {{i18nFunctionName}}("hello {name}", null, {name: "world"}).',
-      autofixFirstArgSuggest: 'Change to {{i18nFunctionName}}({{replaceResult}}).'
-    },
-    type: 'problem',
-    hasSuggestions: true, // 不加这个属性会报错 TypeError: Converting circular structure to JSON
-    fixable: 'code', // 不加这个属性会报错 TypeError: Converting circular structure to JSON
-    schema: [
-      {
-        properties: {
-          i18nFunctionNames: {
-            type: 'array'
-          }
-        }
-      }
-    ]
-  },
-  defaultOptions: [{ i18nFunctionNames: new Array<string>() }],
   create (
     context: Readonly<TSESLint.RuleContext<MessageIDS, Options>>
   ) {
@@ -68,9 +41,9 @@ const rule = createRule({
         const args = node.arguments;
         if (!args.length) {
           context.report({
-            node,
+            data: { i18nFunctionName },
             messageId: 'parameter',
-            data: { i18nFunctionName }
+            node
           });
           return;
         }
@@ -79,9 +52,9 @@ const rule = createRule({
         }
         if (args.length >= 2) {
           context.report({
-            node,
+            data: { i18nFunctionName },
             messageId: 'firstArgShouldBeString',
-            data: { i18nFunctionName }
+            node
           });
           return;
         }
@@ -112,25 +85,56 @@ const rule = createRule({
         const replaceResult = getReplaceResult();
 
         context.report({
-          node,
-          messageId: 'firstArgShouldBeString',
           data: { i18nFunctionName },
           fix (fixer) {
             return fixer.replaceText(args[0], replaceResult);
           },
+          messageId: 'firstArgShouldBeString',
+          node,
           suggest: [
             {
-              messageId: 'autofixFirstArgSuggest',
               data: { i18nFunctionName, replaceResult },
               fix (fixer) {
                 return fixer.replaceText(args[0], replaceResult);
-              }
+              },
+              messageId: 'autofixFirstArgSuggest'
             }
           ]
         });
       }
     };
-  }
+  },
+  defaultOptions: [{ i18nFunctionNames: new Array<string>() }],
+  meta: {
+    docs: {
+      description: 'Detect illegal usage of i18n()',
+      recommended: 'error',
+      requiresTypeChecking: false
+    },
+    // 不加这个属性会报错 TypeError: Converting circular structure to JSON
+    fixable: 'code',
+
+    hasSuggestions: true,
+
+    messages: {
+      autofixFirstArgSuggest: 'Change to {{i18nFunctionName}}({{replaceResult}}).',
+      firstArgShouldBeString: 'The first argument of {{i18nFunctionName}}() must be a string.' +
+        ' If you need to use variable, you can use: {{i18nFunctionName}}("hello {name}", null, {name: "world"}).',
+      parameter: 'This i18n method {{i18nFunctionName}}() requires parameters.'
+    },
+    // 不加这个属性会报错 TypeError: Converting circular structure to JSON
+    schema: [
+      {
+        properties: {
+          i18nFunctionNames: {
+            type: 'array'
+          }
+        }
+      }
+    ],
+    type: 'problem'
+  },
+  name: 'i18n-usage'
 });
 
 export default rule;
