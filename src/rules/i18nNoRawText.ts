@@ -7,7 +7,7 @@ import {
   staticLiteralTypes
 } from '../utils/vueAstTools';
 import { isKebabCase, pascalCase } from '../utils/humpsUtils';
-import { toRegExp } from '../utils/utils';
+import { isNonEmptyArray, toRegExp } from '../utils/utils';
 import eslintPluginVue from 'eslint-plugin-vue/lib/utils';
 
 type TagNameToAttrsMap = Record<string, string[]>;
@@ -191,7 +191,7 @@ export default {
     const options = context.options[0] || {};
     const parsedOptions: ParsedConfigOption = {
       attributes: parseTargetAttrs(options.attributes || {}),
-      i18nFunctionNames: Array.isArray(options.i18nFunctionNames) && options.i18nFunctionNames.length ? options.i18nFunctionNames : ['$gt'],
+      i18nFunctionNames: isNonEmptyArray(options.i18nFunctionNames) ? options.i18nFunctionNames : ['$gt'],
       ignorePattern: new RegExp(options.ignorePattern || /^$/),
       ignoreText: options.ignoreText || []
     };

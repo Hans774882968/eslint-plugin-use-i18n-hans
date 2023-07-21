@@ -1,4 +1,7 @@
+[TOC]
+
 ## 引言
+
 看到[参考链接1](https://www.darraghoriordan.com/2021/11/06/how-to-write-an-eslint-plugin-typescript/)以后，觉得用TS写一个eslint插件应该很~~简单🐔⌨️🍚~~，尝试下来确实如此。
 
 ## 前置知识
@@ -54,8 +57,18 @@ rules:
 - legal: `$gt('abc'), $gt('hello {world}', null, { world: 'world' })`
 - illegal: `$gt()`, `$gt(12), $gt(1 + 2), $gt(null), $gt(undefined), $gt(x), $gt(x, null, {})`
 
+## 配置husky + commitlint
+
+本项目只简单设置一个卡点：提交的代码必须过所有单测。具体配置过程参照我的[另一篇blog《配置husky + commitlint》一节](https://juejin.cn/post/7209625823581601848#heading-12)即可，十分简单~相关命令：
+
+```bash
+npx husky add .husky/pre-commit "yarn test"
+npx husky add .husky/commit-msg 'npx commitlint --edit $1'
+```
+
 ## 第一个eslint规则：no-console
-为了简单，我们只使用tsc进行构建。首先`package.json`需要设置入口`"main": "dist/index.js",`，`tsconfig.json`需要设置`"outDir": "dist"`、`"include": ["src"]`。接下来设计一下单元测试和构建命令：
+
+为了简单，我们只使用`tsc`进行构建。首先`package.json`需要设置入口`"main": "dist/index.js",`，`tsconfig.json`需要设置`"outDir": "dist"`、`"include": ["src"]`。接下来设计一下单元测试和构建命令：
 
 ```json
 "scripts": {
@@ -532,10 +545,24 @@ export default {
 };
 ```
 
-## i18n-usage-vue规则：在vue template中检测不合法的i18n方法使用方式
+## i18n-message-usage规则：检测error message没有使用i18n包裹的情况
+
 TODO
 
+## i18n-usage-vue规则：在vue template中检测不合法的i18n方法使用方式
+
+TODO
+
+## i18n-no-raw-text规则：检测vue template中的纯字符串，并自动用i18n()包裹
+
+TODO
+
+效果
+
+![4-1-i18n-no-raw-text-效果图.png](.\README_assets\4-1-i18n-no-raw-text-效果图.png)
+
 ## 发布npm包
+
 [参考链接3](https://juejin.cn/post/7170635418549878814)。
 
 ### 首次发布包

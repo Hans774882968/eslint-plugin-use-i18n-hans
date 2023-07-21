@@ -1,4 +1,5 @@
 import { ASTUtils, TSESLint, TSESTree } from '@typescript-eslint/utils';
+import { isNonEmptyArray } from '../utils/utils';
 import escodegen from 'escodegen';
 import eslintPluginVue from 'eslint-plugin-vue/lib/utils';
 
@@ -32,7 +33,7 @@ export default {
   ) {
     const options = context.options[0] || {};
     let { i18nFunctionNames } = options;
-    i18nFunctionNames = Array.isArray(i18nFunctionNames) && i18nFunctionNames.length ? i18nFunctionNames : ['$gt'];
+    i18nFunctionNames = isNonEmptyArray(i18nFunctionNames) ? i18nFunctionNames : ['$gt'];
 
     const templateVisitor = {
       CallExpression (node: TSESTree.CallExpression) {

@@ -7,3 +7,7 @@ export function toRegExp (str: string) {
   }
   return new RegExp(`^${escape(str)}$`);
 }
+
+export function isNonEmptyArray (a: unknown): a is unknown[] {
+  return Array.isArray(a) && a.length > 0;
+}
