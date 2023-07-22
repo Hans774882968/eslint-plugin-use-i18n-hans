@@ -549,6 +549,16 @@ export default {
 
 TODO
 
+## config-schema-no-raw-text规则：根据传入的路径来检测对象字面量中的纯字符串，并自动用i18n()包裹
+
+语法约定：
+
+1. `x.y.z`表示期望`{ x: { y: { z: 'raw text' } } }`。
+2. `x[].y[].z`表示期望`{ x: [{ y: [{ z: 'raw text1' }, { z: 'raw text2' }] }, { y: [{ z: 'raw text3' }, { z: 'raw text4' }] }] }`。但最后一个元素为数组的语法不合法。
+3. 对于不合法的语法，目前只是静默丢弃了，没有抛出友好的错误提示。
+
+TODO
+
 ## i18n-usage-vue规则：在vue template中检测不合法的i18n方法使用方式
 
 TODO

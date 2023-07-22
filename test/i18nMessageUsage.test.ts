@@ -202,8 +202,10 @@ ruleTester.run('i18n-message-usage', rule, {
       foo.ElMessage({ type: 'warning', message: 'bar', foo: 'irrelevant' }, { type: 'warning', message: 'bar' });
       foo.messageService({ type: 'warning', message: 'bar', foo: 'irrelevant' }, { type: 'warning', message: 'bar' });
       foo.$message({ type: 'warning', message: 'bar', foo: 'irrelevant' }, { type: 'warning', message: 'bar' });
+      error.messageService('hello world', \`hello\`);
+      error.ElMessage({ type: 'error', message: 'hello world' }, \`hello\`);
       `,
-      errors: Array(21).fill(0).map(() => ({
+      errors: Array(23).fill(0).map(() => ({
         data: { i18nFunctionName: '$gt' },
         messageId: 'useI18n'
       })),
@@ -234,7 +236,23 @@ ruleTester.run('i18n-message-usage', rule, {
       foo.ElMessage({ type: 'warning', message: $gt('bar'), foo: 'irrelevant' }, { type: 'warning', message: 'bar' });
       foo.messageService({ type: 'warning', message: $gt('bar'), foo: 'irrelevant' }, { type: 'warning', message: 'bar' });
       foo.$message({ type: 'warning', message: $gt('bar'), foo: 'irrelevant' }, { type: 'warning', message: 'bar' });
+      error.messageService($gt('hello world'), \`hello\`);
+      error.ElMessage({ type: 'error', message: $gt('hello world') }, \`hello\`);
       `
+    },
+    {
+      code: `messageService.error(123, 'hello');
+      messageService.error(true, 'hello');
+      messageService.error(false, 'hello');
+      messageService.error(null, 'hello');`,
+      errors: Array(4).fill(0).map(() => ({
+        data: { i18nFunctionName: '$gt' },
+        messageId: 'useI18n'
+      })),
+      output: `messageService.error($gt('123'), 'hello');
+      messageService.error($gt('true'), 'hello');
+      messageService.error($gt('false'), 'hello');
+      messageService.error($gt('null'), 'hello');`
     }
   ],
   valid: [
@@ -291,6 +309,19 @@ ruleTester.run('i18n-message-usage', rule, {
         i18nFunctionName: '$i18n',
         messageObjectNames: ['ElMessage']
       }]
+    },
+    {
+      code: `messageService.error.hello('hello world', \`hello\`);
+      messageService.hello.error('hello world', \`hello\`);
+      this.messageService.error.hello('hello world', \`hello\`);
+      messageService.error.hello({ type: 'error', message: 'hello message' }, \`hello\`);
+      messageService.hello.error({ type: 'error', message: 'hello message' }, \`hello\`);
+      this.messageService.error.hello({ type: 'error', message: 'hello message' }, \`hello\`);
+
+      messageService.error(messageService, 'hello');
+      messageService.error(undefined, 'hello');
+      messageService.error(NaN, 'hello');
+      `
     }
   ]
 });
