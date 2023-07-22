@@ -1,4 +1,5 @@
 import { ASTUtils, TSESLint, TSESTree } from '@typescript-eslint/utils';
+import { getStaticLiteralValue, isStaticLiteral } from '../utils/astTools';
 import { isNonEmptyArray } from '../utils/utils';
 import createRule from '../utils/createRule';
 
@@ -11,18 +12,18 @@ const {
 } = TSESTree;
 
 export type Options = [{
-  i18nFunctionNames?: string[],
+  i18nFunctionName?: string,
   levels?: string[],
   messageObjectNames?: string[]
 }];
 
 type ParsedConfigOption = {
-  i18nFunctionNames: string[],
+  i18nFunctionName: string,
   levels: string[],
   messageObjectNames: string[]
 };
 
-export type MessageIDS = 'messageShouldNotBeEmpty' | 'useI18n';
+export type MessageIDS = 'autofixRawTextSuggest' | 'messageShouldNotBeEmpty' | 'useI18n';
 
 type ContextType = Readonly<TSESLint.RuleContext<MessageIDS, Options>>;
 
@@ -34,23 +35,50 @@ const checkValue = (context: ContextType, node: TSESTree.CallExpression, options
     });
     return;
   }
-  if (['TemplateLiteral', 'Literal'].includes(node.arguments[0].type)) {
-    context.report({
-      data: { i18nFunctionName: options.i18nFunctionNames },
-      messageId: 'useI18n',
-      node
-    });
-  }
+  const arg = node.arguments[0];
+  if (!isStaticLiteral(arg)) return;
+  const value = getStaticLiteralValue(arg);
+  const replaceResult = `${options.i18nFunctionName}('${value}')`;
+  context.report({
+    data: { i18nFunctionName: options.i18nFunctionName },
+    fix (fixer) {
+      return fixer.replaceText(arg, replaceResult);
+    },
+    messageId: 'useI18n',
+    node,
+    suggest: [
+      {
+        data: { replaceResult },
+        fix (fixer) {
+          return fixer.replaceText(arg, replaceResult);
+        },
+        messageId: 'autofixRawTextSuggest'
+      }
+    ]
+  });
 };
 
 const checkObjectValue = (context: ContextType, node: TSESTree.Property, options: ParsedConfigOption) => {
-  if (node.value.type === AST_NODE_TYPES.TemplateLiteral || node.value.type === AST_NODE_TYPES.Literal) {
-    context.report({
-      data: { i18nFunctionName: options.i18nFunctionNames },
-      messageId: 'useI18n',
-      node
-    });
-  }
+  if (!isStaticLiteral(node.value)) return;
+  const value = getStaticLiteralValue(node.value);
+  const replaceResult = `${options.i18nFunctionName}('${value}')`;
+  context.report({
+    data: { i18nFunctionName: options.i18nFunctionName },
+    fix (fixer) {
+      return fixer.replaceText(node.value, replaceResult);
+    },
+    messageId: 'useI18n',
+    node,
+    suggest: [
+      {
+        data: { replaceResult },
+        fix (fixer) {
+          return fixer.replaceText(node.value, replaceResult);
+        },
+        messageId: 'autofixRawTextSuggest'
+      }
+    ]
+  });
 };
 
 const processCallExpressionFirstArgument = (context: ContextType, node: TSESTree.Identifier, parsedOption: ParsedConfigOption) => {
@@ -102,7 +130,7 @@ export default createRule({
   ) {
     const options = context.options[0] || {};
     const parsedOption: ParsedConfigOption = {
-      i18nFunctionNames: isNonEmptyArray(options.i18nFunctionNames) ? options.i18nFunctionNames : ['$gt'],
+      i18nFunctionName: options.i18nFunctionName || '$gt',
       levels: isNonEmptyArray(options.levels) ? options.levels : ['error'],
       messageObjectNames: (options.messageObjectNames || ['$message', 'messageService']).map((item) => {
         return item.toLowerCase();
@@ -140,7 +168,7 @@ export default createRule({
     };
   },
   defaultOptions: [{
-    i18nFunctionNames: Array<string>(),
+    i18nFunctionName: '$gt',
     messageObjectNames: Array<string>()
   }],
   meta: {
@@ -149,15 +177,18 @@ export default createRule({
       recommended: 'error',
       requiresTypeChecking: true
     },
+    fixable: 'code',
+    hasSuggestions: true,
     messages: {
+      autofixRawTextSuggest: 'Change to {{replaceResult}}.',
       messageShouldNotBeEmpty: 'error message should not be empty.',
       useI18n: 'Please use {{i18nFunctionName}}() for error message translation.'
     },
     schema: [
       {
         properties: {
-          i18nFunctionNames: {
-            type: 'array'
+          i18nFunctionName: {
+            type: 'string'
           },
           messageObjectNames: {
             type: 'array'

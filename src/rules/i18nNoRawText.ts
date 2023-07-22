@@ -236,9 +236,7 @@ export default {
     },
     // 不加这个属性会报错 TypeError: Converting circular structure to JSON
     fixable: 'code',
-
     hasSuggestions: true,
-
     messages: {
       autofixRawTextSuggest: 'Change to {{replaceResult}}.',
       rawTextUsed: 'Raw text \'{{textValue}}\' is used.'

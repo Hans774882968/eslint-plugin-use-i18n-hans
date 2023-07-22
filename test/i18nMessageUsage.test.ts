@@ -93,7 +93,8 @@ ruleTester.run('i18n-message-usage', rule, {
       code: 'this.$message.error(\'hello world\');',
       errors: [
         { messageId: 'useI18n' }
-      ]
+      ],
+      output: 'this.$message.error($gt(\'hello world\'));'
     },
     {
       code: 'messageService.error(\'hello world\');',
@@ -104,8 +105,9 @@ ruleTester.run('i18n-message-usage', rule, {
         }
       ],
       options: [{
-        i18nFunctionNames: ['$i18n']
-      }]
+        i18nFunctionName: '$i18n'
+      }],
+      output: 'messageService.error($i18n(\'hello world\'));'
     },
     {
       code: 'messageService.error(\'hello world\');',
@@ -114,7 +116,8 @@ ruleTester.run('i18n-message-usage', rule, {
           data: { i18nFunctionName: '$gt' },
           messageId: 'useI18n'
         }
-      ]
+      ],
+      output: 'messageService.error($gt(\'hello world\'));'
     },
     {
       code: 'messageService({ type: \'error\', message: \'hello world\' });',
@@ -125,8 +128,9 @@ ruleTester.run('i18n-message-usage', rule, {
         }
       ],
       options: [{
-        i18nFunctionNames: ['$i18n']
-      }]
+        i18nFunctionName: '$i18n'
+      }],
+      output: 'messageService({ type: \'error\', message: $i18n(\'hello world\') });'
     },
     {
       code: 'this.$message({ type: \'error\', message: \'hello world\' });',
@@ -135,7 +139,8 @@ ruleTester.run('i18n-message-usage', rule, {
           data: { i18nFunctionName: '$gt' },
           messageId: 'useI18n'
         }
-      ]
+      ],
+      output: 'this.$message({ type: \'error\', message: $gt(\'hello world\') });'
     },
     {
       code: 'abc.$message(\'hello world\');',
@@ -144,7 +149,8 @@ ruleTester.run('i18n-message-usage', rule, {
           data: { i18nFunctionName: '$gt' },
           messageId: 'useI18n'
         }
-      ]
+      ],
+      output: 'abc.$message($gt(\'hello world\'));'
     },
     {
       code: 'messageService(\'hello world\');',
@@ -153,7 +159,8 @@ ruleTester.run('i18n-message-usage', rule, {
           data: { i18nFunctionName: '$gt' },
           messageId: 'useI18n'
         }
-      ]
+      ],
+      output: 'messageService($gt(\'hello world\'));'
     },
     {
       code: `import { ElMessage } from 'element-plus';
@@ -165,9 +172,11 @@ ruleTester.run('i18n-message-usage', rule, {
         }
       ],
       options: [{
-        i18nFunctionNames: ['$i18n'],
+        i18nFunctionName: '$i18n',
         messageObjectNames: ['ElMessage']
-      }]
+      }],
+      output: `import { ElMessage } from 'element-plus';
+      ElMessage($i18n('hello world'));`
     },
     {
       code: `import { ElMessage } from 'element-plus';
@@ -190,9 +199,9 @@ ruleTester.run('i18n-message-usage', rule, {
       foo.ElMessage('bar');
       foo.messageService('bar');
       foo.$message('bar');
-      foo.ElMessage({ type: 'warning', message: 'bar' });
-      foo.messageService({ type: 'warning', message: 'bar' });
-      foo.$message({ type: 'warning', message: 'bar' });
+      foo.ElMessage({ type: 'warning', message: 'bar', foo: 'irrelevant' }, { type: 'warning', message: 'bar' });
+      foo.messageService({ type: 'warning', message: 'bar', foo: 'irrelevant' }, { type: 'warning', message: 'bar' });
+      foo.$message({ type: 'warning', message: 'bar', foo: 'irrelevant' }, { type: 'warning', message: 'bar' });
       `,
       errors: Array(21).fill(0).map(() => ({
         data: { i18nFunctionName: '$gt' },
@@ -201,7 +210,31 @@ ruleTester.run('i18n-message-usage', rule, {
       options: [{
         levels: ['error', 'warning'],
         messageObjectNames: ['ElMessage', 'messageService', '$message']
-      }]
+      }],
+      output: `import { ElMessage } from 'element-plus';
+      ElMessage.error($gt(''));
+      ElMessage.error($gt(''));
+      ElMessage.error($gt(''));
+
+      ElMessage.error($gt('hello world'));
+      messageService.error($gt('hello world'));
+      $message.error($gt('hello world'));
+      foo.ElMessage.error($gt('hello world'));
+      foo.messageService.error($gt('hello world'));
+      foo.$message.error($gt('hello world'));
+      ElMessage($gt('hello world'));
+      messageService($gt('hello world'));
+      $message($gt('hello world'));
+      ElMessage({ type: 'warning', message: $gt('bar') });
+      messageService({ type: 'warning', message: $gt('bar') });
+      $message({ type: 'warning', message: $gt('bar') });
+      foo.ElMessage($gt('bar'));
+      foo.messageService($gt('bar'));
+      foo.$message($gt('bar'));
+      foo.ElMessage({ type: 'warning', message: $gt('bar'), foo: 'irrelevant' }, { type: 'warning', message: 'bar' });
+      foo.messageService({ type: 'warning', message: $gt('bar'), foo: 'irrelevant' }, { type: 'warning', message: 'bar' });
+      foo.$message({ type: 'warning', message: $gt('bar'), foo: 'irrelevant' }, { type: 'warning', message: 'bar' });
+      `
     }
   ],
   valid: [
@@ -237,6 +270,25 @@ ruleTester.run('i18n-message-usage', rule, {
       code: `import { ElMessage } from 'element-plus';
       ElMessage($gt('hello world'));`,
       options: [{
+        messageObjectNames: ['ElMessage']
+      }]
+    },
+    {
+      code: 'messageService($gt(\'hello world\'), `hello`);'
+    },
+    {
+      code: `ElMessage($gt('hello world'), \`hello\`);
+      messageService('hello world');`,
+      options: [{
+        messageObjectNames: ['ElMessage']
+      }]
+    },
+    {
+      code: `let x = 1;
+      ElMessage(\`x = \${x}\`);
+      ElMessage.error(\`\${x} === x\`);`,
+      options: [{
+        i18nFunctionName: '$i18n',
         messageObjectNames: ['ElMessage']
       }]
     }

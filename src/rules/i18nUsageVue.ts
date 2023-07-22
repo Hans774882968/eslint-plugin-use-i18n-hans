@@ -117,9 +117,7 @@ export default {
     },
     // 不加这个属性会报错 TypeError: Converting circular structure to JSON
     fixable: 'code',
-
     hasSuggestions: true,
-
     messages: {
       autofixFirstArgSuggest: 'Change to {{i18nFunctionName}}({{replaceResult}}).',
       firstArgShouldBeString: 'The first argument of {{i18nFunctionName}}() must be a string.' +
