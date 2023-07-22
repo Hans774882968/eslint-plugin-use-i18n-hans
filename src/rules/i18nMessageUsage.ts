@@ -53,6 +53,49 @@ const checkObjectValue = (context: ContextType, node: TSESTree.Property, options
   }
 };
 
+const processCallExpressionFirstArgument = (context: ContextType, node: TSESTree.Identifier, parsedOption: ParsedConfigOption) => {
+  const processCallExpressionFirstArgumentIsObject = (firstArg: TSESTree.ObjectExpression) => {
+    const property = firstArg.properties.find((item) => {
+      if (item.type !== AST_NODE_TYPES.Property || !isIdentifier(item.key) || item.key.name !== 'type') return false;
+      if (item.value.type !== AST_NODE_TYPES.Literal || typeof item.value.value !== 'string') return false;
+      return parsedOption.levels.includes(item.value.value);
+    });
+    if (!property) return;
+    const msg = firstArg.properties.find((item) => item.type === AST_NODE_TYPES.Property && isIdentifier(item.key) && item.key.name === 'message');
+    if (msg?.type === AST_NODE_TYPES.Property) {
+      checkObjectValue(context, msg, parsedOption);
+    }
+    else {
+      context.report({
+        messageId: 'messageShouldNotBeEmpty',
+        node
+      });
+    }
+  };
+  if (node.parent?.parent && node.parent.parent.type === AST_NODE_TYPES.CallExpression) {
+    const ancestor = node.parent.parent;
+    if (ancestor.callee.type === AST_NODE_TYPES.MemberExpression && ancestor.callee.property === node) {
+      // this.$message('str')
+      checkValue(context, ancestor, parsedOption);
+      // this.$message({})
+      if (ancestor.arguments.length && ancestor.arguments[0].type === AST_NODE_TYPES.ObjectExpression) {
+        processCallExpressionFirstArgumentIsObject(ancestor.arguments[0]);
+      }
+    }
+  }
+  if (node.parent?.type === AST_NODE_TYPES.CallExpression) {
+    const ancestor = node.parent;
+    if (isIdentifier(ancestor.callee) && ancestor.callee === node) {
+      // messageService('str')
+      checkValue(context, node.parent, parsedOption);
+      // messageService({})
+      if (node.parent.arguments.length && node.parent.arguments[0].type === AST_NODE_TYPES.ObjectExpression) {
+        processCallExpressionFirstArgumentIsObject(node.parent.arguments[0]);
+      }
+    }
+  }
+};
+
 export default createRule({
   create (
     context: ContextType
@@ -71,7 +114,7 @@ export default createRule({
         const { messageObjectNames: messageForm } = parsedOption;
         if (parsedOption.levels.includes(node.name)) {
           const isMessage = (parentNode: TSESTree.MemberExpression) => {
-            // this.$message.error() or this.messageService.error()
+            // this.$message.error('str') or this.messageService.error('str')
             const parentObject = parentNode.object;
             if (parentObject.type !== AST_NODE_TYPES.MemberExpression) return false;
             if (parentObject.property.type !== AST_NODE_TYPES.Identifier && parentObject.property.type !== AST_NODE_TYPES.PrivateIdentifier) return false;
@@ -79,7 +122,7 @@ export default createRule({
             return true;
           };
           const isMessageService = (parentNode: TSESTree.MemberExpression) => {
-            // $message.error() or messageService.error()
+            // $message.error('str') or messageService.error('str')
             const parentObject = parentNode.object;
             if (!isIdentifier(parentObject)) return false;
             return messageForm.includes(parentObject.name.toLowerCase());
@@ -91,31 +134,7 @@ export default createRule({
           }
         }
         else if (messageForm.includes(node.name.toLowerCase())) {
-          // this.$message({}) or messageService({})
-          const processCallExpressionFirstArgument = (firstArg: TSESTree.ObjectExpression) => {
-            const property = firstArg.properties.find((item) => {
-              if (item.type !== AST_NODE_TYPES.Property || !isIdentifier(item.key) || item.key.name !== 'type') return false;
-              if (item.value.type !== AST_NODE_TYPES.Literal || typeof item.value.value !== 'string') return false;
-              return parsedOption.levels.includes(item.value.value);
-            });
-            if (!property) return;
-            const msg = firstArg.properties.find((item) => item.type === AST_NODE_TYPES.Property && isIdentifier(item.key) && item.key.name === 'message');
-            if (msg?.type === AST_NODE_TYPES.Property) {
-              checkObjectValue(context, msg, parsedOption);
-            }
-            else {
-              context.report({
-                messageId: 'messageShouldNotBeEmpty',
-                node
-              });
-            }
-          };
-          if (node.parent?.parent && node.parent.parent.type === AST_NODE_TYPES.CallExpression && node.parent.parent.arguments.length && node.parent.parent.arguments[0].type === AST_NODE_TYPES.ObjectExpression) { // this.$message({})
-            processCallExpressionFirstArgument(node.parent.parent.arguments[0]);
-          }
-          if (node.parent?.type === AST_NODE_TYPES.CallExpression && node.parent.arguments && node.parent.arguments.length && node.parent.arguments[0].type === AST_NODE_TYPES.ObjectExpression) { // messageService({})
-            processCallExpressionFirstArgument(node.parent.arguments[0]);
-          }
+          processCallExpressionFirstArgument(context, node, parsedOption);
         }
       }
     };
