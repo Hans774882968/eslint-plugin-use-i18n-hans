@@ -1,5 +1,6 @@
 import { RuleTester } from 'eslint';
-import rule from '../src/rules/i18nNoRawText';
+import { ValidTestCase } from '@typescript-eslint/utils/dist/ts-eslint/RuleTester';
+import rule, { Options } from '../src/rules/i18nNoRawText';
 const vueEslintParser = require.resolve('vue-eslint-parser');
 
 const ruleTester = new RuleTester({
@@ -26,6 +27,22 @@ const attributeConfig = {
   'img': ['alt'],
   'input': ['placeholder']
 };
+
+// VAttribute directive = true and false 中 !node.value 的情况
+const vAttributeNodeValueIsFalsyCases: Array<ValidTestCase<Options>> = [
+  {
+    code: '<template><div content /><div content="" /></template>',
+    options: [{
+      attributes: attributeConfig
+    }]
+  },
+  {
+    code: '<template><div :content /><div :content="" /></template>',
+    options: [{
+      attributes: attributeConfig
+    }]
+  }
+];
 
 ruleTester.run('i18n-usage-vue', rule as any, {
   invalid: [
@@ -261,6 +278,7 @@ ruleTester.run('i18n-usage-vue', rule as any, {
         i18nFunctionNames: ['$t'],
         ignoreText: ['hello world', 'acmer']
       }]
-    }
+    },
+    ...vAttributeNodeValueIsFalsyCases as any[]
   ]
 });

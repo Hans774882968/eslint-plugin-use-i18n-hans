@@ -29,7 +29,7 @@ type ParsedConfigOption = {
   ignoreText: string[]
 };
 
-type Options = [ConfigOption];
+export type Options = [ConfigOption];
 
 export type MessageIDS = 'rawTextUsed' | 'autofixRawTextSuggest';
 

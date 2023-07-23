@@ -57,6 +57,30 @@ rules:
 - legal: `$gt('abc'), $gt('hello {world}', null, { world: 'world' })`
 - illegal: `$gt()`, `$gt(12), $gt(1 + 2), $gt(null), $gt(undefined), $gt(x), $gt(x, null, {})`
 
+### Rule: i18n-message-usage
+
+TODO
+
+### Rule: config-schema-no-raw-text
+
+TODO
+
+### Rule: i18n-usage-vue
+
+TODO
+
+### Rule: i18n-no-raw-text
+
+TODO
+
+## 亮点
+
+1. 全网少有的使用TypeScript实现eslint插件的教程。实现了一系列可用于Vue、TypeScript和JavaScript文件的eslint规则。
+2. 沉淀出[npm包](https://www.npmjs.com/package/@hans774882968/eslint-plugin-use-i18n)，并在我的Vue3 + TypeScript开源项目[schema-ui-vue3-demo](https://github.com/Hans774882968/schema-ui-vue3-demo)中实现自动包裹`i18n()`。
+3. 使用`jest`进行单元测试，针对覆盖率报告不断提升测试覆盖率，最终测试覆盖率接近100%。
+4. 项目规范：配置husky + commitlint、eslint。
+5. 编写构建脚本`scripts/build.ts`使得构建过程更为灵活。
+
 ## 配置husky + commitlint
 
 本项目只简单设置一个卡点：提交的代码必须过所有单测。具体配置过程参照我的[另一篇blog《配置husky + commitlint》一节](https://juejin.cn/post/7209625823581601848#heading-12)即可，十分简单~相关命令：
@@ -223,7 +247,28 @@ yarn test
 yarn test "test/i18nUsageVue.test.ts"
 ```
 
+### 获取测试覆盖率
+
+通过测试覆盖率报告，查看未覆盖的分支，并针对性地提供更多测试用例，是保证eslint插件开发质量的必然要求。首先`.gitignore`加一下`coverage`文件夹：
+
+```python
+# ...
+# Editor directories and files
+.idea
+.vscode
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+coverage
+```
+
+然后`package.json`新增命令`"test:coverage": "jest --collectCoverage",`。接下来就可以用`yarn test:coverage`获取测试覆盖率啦！
+
 ### 测试用例的编写
+
 这里只是一个简单的介绍，更具体的介绍参见下一个名为《测试用例的编写》的章节。基本格式如下：
 
 ```ts

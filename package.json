@@ -20,6 +20,7 @@
     "build": "node --experimental-json-modules scripts/build.mjs",
     "test": "jest",
     "test:help": "jest --help",
+    "test:coverage": "jest --collectCoverage",
     "lint-include-fixtures": "eslint \"src/**/*.{js,jsx,ts,tsx}\" \"test/**/*.{js,jsx,ts,tsx}\" \"*.{js,jsx,ts,tsx}\" \"fixtures/**/*.{js,jsx,ts,tsx}\" --fix",
     "lint": "eslint \"src/**/*.{js,jsx,ts,tsx}\" \"test/**/*.{js,jsx,ts,tsx}\" \"*.{js,jsx,ts,tsx}\" --fix"
   },

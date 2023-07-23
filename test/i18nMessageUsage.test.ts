@@ -263,10 +263,28 @@ ruleTester.run('i18n-message-usage', rule, {
       code: 'messageService.error($gt(\'hello world\'));'
     },
     {
-      code: 'messageService({ type: \'error\', message: $gt(\'hello world\') });'
+      code: 'let x = {}; messageService({ type: \'error\', message: $gt(\'hello world\'), ...x });'
     },
     {
-      code: 'this.$message({ type: \'error\', message: $gt(\'hello world\') });'
+      code: 'this.$message({ type: \'error\', message: $gt(\'hello world\'), [\'type\']: \'error\' });'
+    },
+    {
+      code: 'ElMessage({ type: 123, message: \'hello world\', [\'type\']: \'error\' });',
+      options: [{
+        messageObjectNames: ['ElMessage']
+      }]
+    },
+    {
+      code: 'ElMessage({ type: 123, message: \'hello world\' });',
+      options: [{
+        messageObjectNames: ['ElMessage']
+      }]
+    },
+    {
+      code: 'ElMessage({ message: \'hello world\', [\'type\']: \'error\' });',
+      options: [{
+        messageObjectNames: ['ElMessage']
+      }]
     },
     {
       code: `import { ElMessage } from 'element-plus';
@@ -322,6 +340,13 @@ ruleTester.run('i18n-message-usage', rule, {
       messageService.error(undefined, 'hello');
       messageService.error(NaN, 'hello');
       `
+    },
+    // 这种情况在单测中是valid，但 eslint 会先把 ['error'] 变成 .error，于是我的插件仍能给它包裹 i18n()。故我认为不需要额外给 i18n-message-usage 增加识别 ['error'] 的能力
+    {
+      code: 'ElMessage[\'error\'](`123`);',
+      options: [{
+        messageObjectNames: ['ElMessage']
+      }]
     }
   ]
 });

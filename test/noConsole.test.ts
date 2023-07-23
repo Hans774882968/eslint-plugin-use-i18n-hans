@@ -1,4 +1,5 @@
 import { ESLintUtils } from '@typescript-eslint/utils';
+import path from 'path';
 import rule from '../src/rules/noConsole';
 
 const ruleTester = new ESLintUtils.RuleTester({
@@ -45,6 +46,16 @@ ruleTester.run('no-console', rule, {
         const x = 1;
         console.memory;
       `
+    },
+    {
+      code: 'console.log("hello~");',
+      filename: path.resolve('hello-world.ts'),
+      options: [{
+        excludedFiles: ['hello-world.ts']
+      }]
+    },
+    {
+      code: 'foo.$i18n("hello~"); abc.foo.$i18n("hello!")'
     }
   ]
 });

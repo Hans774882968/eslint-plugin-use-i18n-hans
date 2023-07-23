@@ -39,7 +39,13 @@ const basicCaseInputCodes = [
   `,
   // vue-eslint-parser的bug，两个右大括号不要写在一起，要用一个空格隔开
   '<template><p><span>{{ $t(12*({x:{y:2} }).x.y+34*65) }}</span></p></template>',
-  '<template><p>{{ $t($t) }}</p></template>'
+  '<template><p>{{ $t($t) }}</p></template>',
+  `<template>
+  <p>{{ $t($t, null) }}</p>
+  <p>{{ $gt($gt, null) }}</p>
+  <p>{{ $i18n($i18n, null, $t(null, 0)) }}</p>
+  </template>`,
+  '<template><p>{{ abc.$t(undefined, def.abc.$t(true, 0)) }}</p></template>'
 ];
 
 const basicCaseOutputCodes = [
@@ -54,8 +60,12 @@ const basicCaseOutputCodes = [
 } }) }}</span></p></template>
   `,
   '<template><p><span>{{ $t(\'{value}\', null, { value: 12 * { x: { y: 2 } }.x.y + 34 * 65 }) }}</span></p></template>',
-  '<template><p>{{ $t(\'{$t}\', null, { $t }) }}</p></template>'
+  '<template><p>{{ $t(\'{$t}\', null, { $t }) }}</p></template>',
+  '',
+  ''
 ];
+
+expect(basicCaseInputCodes.length - basicCaseOutputCodes.length).toBe(0);
 
 ruleTester.run('i18n-usage-vue', rule as any, {
   invalid: [
@@ -155,6 +165,32 @@ ruleTester.run('i18n-usage-vue', rule as any, {
       ],
       options: [{ i18nFunctionNames: ['$t'] }],
       output: basicCaseOutputCodes[8]
+    },
+    {
+      code: basicCaseInputCodes[9],
+      errors: [
+        {
+          data: { i18nFunctionName: '$t' },
+          messageId: 'firstArgShouldBeString'
+        },
+        {
+          data: { i18nFunctionName: '$i18n' },
+          messageId: 'firstArgShouldBeString'
+        },
+        {
+          data: { i18nFunctionName: '$t' },
+          messageId: 'firstArgShouldBeString'
+        }
+      ],
+      options: [{ i18nFunctionNames: ['$t', '$i18n'] }]
+    },
+    {
+      code: basicCaseInputCodes[10],
+      errors: Array(2).fill(0).map(() => ({
+        data: { i18nFunctionName: '$t' },
+        messageId: 'firstArgShouldBeString'
+      })),
+      options: [{ i18nFunctionNames: ['$t'] }]
     }
   ],
   valid: [

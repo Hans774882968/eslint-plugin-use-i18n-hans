@@ -6,12 +6,86 @@ const ruleTester = new ESLintUtils.RuleTester({
   parser: '@typescript-eslint/parser'
 });
 
+const validNonArrayCases: Array<ValidTestCase<Options>> = [
+  {
+    code: '{ label: \'foo\' }'
+  },
+  {
+    code: '{ label: \'foo\' }',
+    options: [{
+      paths: [
+        ''
+      ]
+    }]
+  },
+  {
+    code: '{ label: \'foo\' }',
+    options: [{
+      paths: [
+        'label.a'
+      ]
+    }]
+  },
+  {
+    code: '{ label: { x: 0 } }',
+    options: [{
+      paths: [
+        'label'
+      ]
+    }]
+  },
+  {
+    code: '{ label: { x: \'hello~\' } }',
+    options: [{
+      paths: [
+        'label.x.'
+      ]
+    }]
+  },
+  {
+    code: '{ label: { x: \'hello~\' } }',
+    options: [{
+      paths: [
+        '.label.x', '.label.x.'
+      ]
+    }]
+  },
+  {
+    code: `let label = {};
+    export default { label: { x: 'hello~' }, ...label };
+    `,
+    options: [{
+      paths: [
+        'label.', 'label'
+      ]
+    }]
+  }
+];
+
 const validArrayCases: Array<ValidTestCase<Options>> = [
   {
     code: 'export default { columns: [{ label: [ { x: \'hello\' } ] }] };',
     options: [{
       paths: [
         'columns[].label[]'
+      ]
+    }]
+  },
+  {
+    code: `let x = 0, y = [{ label: 'hello~' }];
+    export default { columns: [{ label: [ { x: 'hello' } ] }, x, ...y] };`,
+    options: [{
+      paths: [
+        'columns[].label'
+      ]
+    }]
+  },
+  {
+    code: `let x = 0, y = [{ label: 'hello~' }];
+    export default { columns: [{ label: x }, x, ...y] };`,
+    options: [{
+      paths: [
+        'columns[].label.x'
       ]
     }]
   }
@@ -112,33 +186,7 @@ ruleTester.run('config-schema-no-raw-text', rule, {
     ...invalidArrayCases
   ],
   valid: [
-    {
-      code: '{ label: \'foo\' }'
-    },
-    {
-      code: '{ label: \'foo\' }',
-      options: [{
-        paths: [
-          ''
-        ]
-      }]
-    },
-    {
-      code: '{ label: \'foo\' }',
-      options: [{
-        paths: [
-          'label.a'
-        ]
-      }]
-    },
-    {
-      code: '{ label: { x: 0 } }',
-      options: [{
-        paths: [
-          'label'
-        ]
-      }]
-    },
+    ...validNonArrayCases,
     ...validArrayCases
   ]
 });
