@@ -59,11 +59,42 @@ rules:
 
 ### Rule: i18n-message-usage
 
-TODO
+Params：
+
+- `i18nFunctionName`: i18n function name. default `$gt`
+- `levels`: default `['error']`
+- `messageObjectNames`: default `['$message', 'messageService']`
+
+Detect some kinds of raw text in the usage of "message", and automatically fixes them. For example, `this.$message.error('str')` or `$message.error('str')` or `this.$message('str')` or `this.$message({ type: 'error', message: 'str' })` or `$message('str')` or `$message({ type: 'error', message: 'str' })`
 
 ### Rule: config-schema-no-raw-text
 
 TODO
+
+Params：
+
+- `i18nFunctionName`: i18n function name. default `$gt`
+- `paths`: `string[]`, each element represents a matching rule. For example, `x.y.z`, `columns[].label[].x`
+
+Provide the ability to control the set of fields that need to be wrapped around `$i18n()` by entering a schema into an eslint rule.
+
+For example, there is an illegal demo:
+
+```ts
+let a = {
+  x: { y: { z: 'foo' } }
+};
+```
+
+`paths: ['x.y.z']`
+
+fixed:
+
+```ts
+let a = {
+  x: { y: { z: $i18n('foo') } }
+};
+```
 
 ### Rule: i18n-usage-vue
 

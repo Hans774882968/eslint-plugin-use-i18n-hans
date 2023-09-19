@@ -17,7 +17,6 @@ const rule = createRule({
   create (
     context: Readonly<TSESLint.RuleContext<'rememberToDelete', Options>>
   ) {
-    // 单测环境context.getFilename()只能返回file.ts，只好在引入本插件的工程中看效果
     const fileName = context.getFilename();
     const options = context.options[0] || {};
     const { excludedFiles } = options;
